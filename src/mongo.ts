@@ -1,4 +1,4 @@
-import {AggregationCursor, BulkWriteOpResultObject, Collection, Db, DeleteWriteOpResultObject, FilterQuery, FindAndModifyWriteOpResultObject, MatchKeysAndValues, MongoClient, MongoClientOptions, PullOperator, PushOperator, SortOptionObject} from 'mongodb';
+import {AggregationCursor, BulkWriteOpResultObject, Collection, Db, DeleteWriteOpResultObject, FilterQuery, FindAndModifyWriteOpResultObject, MatchKeysAndValues, MongoClient, MongoClientOptions, ProjectionOperators, PullOperator, PushOperator, SchemaMember, SortOptionObject} from 'mongodb';
 
 export interface MongoConfig {
   uri: string;
@@ -27,30 +27,47 @@ export function connect(uri: string, options: MongoClientOptions): Promise<Mongo
     });
   });
 }
-export function findOne<T>(collection: Collection, query: FilterQuery<T>, idName?: string, m?: StringMap): Promise<T> {
-  return _findOne<T>(collection, query).then(obj => mapOne(obj, idName, m));
+export function findOne<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap): Promise<T> {
+  return _findOne<T>(collection, query).then(obj => mapOne(obj, id, m));
 }
 function _findOne<T>(collection: Collection, query: FilterQuery<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     collection.findOne(query, (err, item: T) => err ? reject(err) : resolve(item));
   });
 }
-
-export async function findWithMap<T>(collection: Collection, query: FilterQuery<T>, idName?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: any): Promise<T[]> {
+export function getFields<T>(collection: Collection, field: string, values: T[], noSort?: boolean): Promise<T[]> {
+  const query: any = {};
+  query[field] = { $in: values };
+  const project: any = {};
+  project[field] = 1;
+  let sort: any;
+  if (!noSort) {
+    sort = {};
+    sort[field] = 1;
+  }
+  return find(collection, query, sort, undefined, undefined, project).then(v => {
+    const r: T[] = [];
+    for (const s of v) {
+      r.push(s[field]);
+    }
+    return r;
+  });
+}
+export async function findWithMap<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: any): Promise<T[]> {
   const objects = await find<T>(collection, query, sort, limit, skip, project);
   for (const obj of objects) {
-    if (idName && idName !== '') {
-      (obj as any)[idName] = (obj as any)['_id'];
+    if (id && id !== '') {
+      obj[id] = obj['_id'];
     }
-    delete (obj as any)['_id'];
+    delete obj['_id'];
   }
   if (!m) {
     return objects;
   } else {
-    return await mapArray(objects, m);
+    return mapArray(objects, m);
   }
 }
-export function find<T>(collection: Collection, query: FilterQuery<T>, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: any): Promise<T[]> {
+export function find<T>(collection: Collection, query: FilterQuery<T>, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: SchemaMember<T, ProjectionOperators | number | boolean | any>): Promise<T[]> {
   return new Promise<T[]>((resolve, reject) => {
     let cursor = collection.find(query);
     if (sort) {
@@ -69,31 +86,38 @@ export function find<T>(collection: Collection, query: FilterQuery<T>, sort?: st
   });
 }
 
-export async function insert<T>(collection: Collection, obj: T, idName?: string): Promise<number> {
+export async function insert<T>(collection: Collection, obj: T, id?: string, handleDuplicate?: boolean, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   try {
-    const value = await collection.insertOne(revertOne(obj, idName));
-    mapOne(obj, idName);
+    obj = revertOne(obj, id);
+    if (toBson) {
+      obj = toBson(obj);
+    }
+    const value = await collection.insertOne(obj);
+    mapOne(obj, id);
+    if (toBson && fromBson) {
+      fromBson(obj);
+    }
     return value.insertedCount;
   } catch (err) {
-    if (err) {
+    if (handleDuplicate && err && err.errmsg) {
       if (err.errmsg.indexOf('duplicate key error collection:') >= 0) {
         if (err.errmsg.indexOf('dup key: { _id:') >= 0) {
           return 0;
         } else {
-          throw -1;
+          return -1;
         }
       }
     }
     throw err;
   }
 }
-export async function insertMany<T>(collection: Collection, objs: T[], idName?: string): Promise<number> {
+export async function insertMany<T>(collection: Collection, objs: T[], id?: string): Promise<number> {
   try {
-    const value = await collection.insertMany(revertArray(objs, idName));
-    if (idName) {
+    const value = await collection.insertMany(revertArray(objs, id));
+    if (id) {
       for (let i = 0; i < value.ops.length; i++) {
-        (objs[i] as any)[idName] = value.ops[i]['_id'];
-        delete (objs[i] as any)['_id'];
+        objs[i][id] = value.ops[i]['_id'];
+        delete objs[i]['_id'];
       }
     }
     return value.insertedCount;
@@ -110,56 +134,116 @@ export async function insertMany<T>(collection: Collection, objs: T[], idName?: 
     throw err;
   }
 }
-export function patch<T>(collection: Collection, obj: T, idName?: string): Promise<number> {
+export function patch<T>(collection: Collection, obj: T, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
-    revertOne(obj, idName);
-    if (!(obj as any)['_id']) {
-      return reject(new Error('Cannot updateOne an Object that do not have _id field.'));
-    }
-    collection.findOneAndUpdate({ _id: (obj as any)['_id'] }, { $set: obj }, { returnOriginal: false }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
-      if (err) {
-        reject(err);
-      } else {
-        mapOne(obj, idName);
-        resolve(result.ok);
-      }
-    });
-  }));
-}
-export function update<T>(collection: Collection, obj: T, idName?: string): Promise<number> {
-  return new Promise<number>(((resolve, reject) => {
-    revertOne(obj, idName);
-    if (!(obj as any)['_id']) {
-      return reject(new Error('Cannot updateOne an Object that do not have _id field.'));
-    }
-    collection.findOneAndReplace({ _id: (obj as any)['_id'] }, (obj as any), { returnOriginal: false }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
-      if (err) {
-        reject(err);
-      } else {
-        mapOne(obj, idName);
-        resolve(result.ok);
-      }
-    });
-  }));
-}
-export function updateFields<T>(collection: Collection, object: T, arr: PushOperator<T>, idName?: string): Promise<T> {
-  return new Promise<T>(((resolve, reject) => {
-    const obj: any = revertOne(object, idName);
+    revertOne(obj, id);
     if (!obj['_id']) {
-      return reject(new Error('Cannot updateOne an Object that do not have _id field.'));
+      return reject(new Error('Cannot patch an object that do not have _id field: ' + JSON.stringify(obj)));
     }
-    collection.findOneAndUpdate({ _id: obj['_id'] }, { $push: arr }, { returnOriginal: false }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+    if (toBson) {
+      obj = toBson(obj);
+    }
+    collection.findOneAndUpdate({ _id: obj['_id'] }, { $set: obj }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+      if (err) {
+        reject(err);
+      } else {
+        mapOne(obj, id);
+        if (toBson && fromBson) {
+          fromBson(obj);
+        }
+        resolve(getAffectedRow(result));
+      }
+    });
+  }));
+}
+export function getAffectedRow<T>(result: FindAndModifyWriteOpResultObject<T>): number {
+  if (result.lastErrorObject) {
+    return result.lastErrorObject.n;
+  } else {
+    return result.ok;
+  }
+}
+export function patchWithFilter<T>(collection: Collection, obj: T, filter: FilterQuery<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+    if (toBson) {
+    obj = toBson(obj);
+  }
+  return new Promise<number>(((resolve, reject) => {
+    collection.findOneAndUpdate(filter, { $set: obj }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (toBson && fromBson) {
+          fromBson(obj);
+        }
+        resolve(getAffectedRow(result));
+      }
+    });
+  }));
+}
+export function update<T>(collection: Collection, obj: T, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+  return new Promise<number>(((resolve, reject) => {
+    revertOne(obj, id);
+    if (!obj['_id']) {
+      return reject(new Error('Cannot update an object that do not have _id field: ' + JSON.stringify(obj)));
+    }
+    if (toBson) {
+      obj = toBson(obj);
+    }
+    collection.findOneAndReplace({ _id: obj['_id'] }, (obj as any), (err, result: FindAndModifyWriteOpResultObject<T>) => {
+      if (err) {
+        reject(err);
+      } else {
+        mapOne(obj, id);
+        if (toBson && fromBson) {
+          fromBson(obj);
+        }
+        resolve(getAffectedRow(result));
+      }
+    });
+  }));
+}
+export function updateWithFilter<T>(collection: Collection, obj: T, filter: FilterQuery<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+  if (toBson) {
+    obj = toBson(obj);
+  }
+  return new Promise<number>(((resolve, reject) => {
+    collection.findOneAndReplace(filter, (obj as any), (err, result: FindAndModifyWriteOpResultObject<T>) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (toBson && fromBson) {
+          fromBson(obj);
+        }
+        resolve(getAffectedRow(result));
+      }
+    });
+  }));
+}
+export function updateFields<T>(collection: Collection, object: T, arr: PushOperator<T>, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<T> {
+  return new Promise<T>(((resolve, reject) => {
+    let obj: any = revertOne(object, id);
+    if (!obj['_id']) {
+      return reject(new Error('Cannot update an object that do not have _id field: ' + JSON.stringify(obj)));
+    }
+    if (toBson) {
+      obj = toBson(obj);
+    }
+    collection.findOneAndUpdate({ _id: obj['_id'] }, { $push: arr }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
       if (err) {
         return reject(err);
       } else {
-        return resolve(result.value);
+        if (fromBson) {
+          return resolve(fromBson(result.value));
+        } else {
+          return resolve(result.value);
+        }
       }
     });
   }));
 }
 export function updateByQuery<T>(collection: Collection, query: FilterQuery<T>, setValue: MatchKeysAndValues<T>): Promise<T> {
   return new Promise<T>(((resolve, reject) => {
-    collection.findOneAndUpdate(query, { $set: setValue }, { returnOriginal: false }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+    collection.findOneAndUpdate(query, { $set: setValue }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
       if (err) {
         return reject(err);
       } else {
@@ -180,10 +264,10 @@ export function updateMany<T>(collection: Collection, filter: FilterQuery<T>, up
   }));
 }
 */
-export function updateMany<T>(collection: Collection, objects: T[], idName?: string): Promise<number> {
+export function updateMany<T>(collection: Collection, objects: T[], id?: string): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
     const operations = [];
-    revertArray(objects, idName);
+    revertArray(objects, id);
     for (const object of objects) {
       const obj: any = object;
       if (obj['_id']) {
@@ -195,7 +279,6 @@ export function updateMany<T>(collection: Collection, objects: T[], idName?: str
         });
       }
     }
-
     if (operations.length === 0) {
       return resolve(0);
     }
@@ -208,37 +291,70 @@ export function updateMany<T>(collection: Collection, objects: T[], idName?: str
     });
   }));
 }
-export function upsert<T>(collection: Collection, object: T, idName?: string): Promise<number> {
-  const obj: any = revertOne(object, idName);
+export function upsert<T>(collection: Collection, object: T, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+  let obj: any = revertOne(object, id);
   if (obj['_id']) {
+    if (toBson) {
+      obj = toBson(obj);
+    }
     return new Promise<number>(((resolve, reject) => {
       collection.findOneAndUpdate({ _id: obj['_id'] }, { $set: obj }, {
-        upsert: true,
-        returnOriginal: false,
+        upsert: true
       }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
         if (err) {
           reject(err);
         } else {
-          if (idName) {
-            mapOne(obj, idName);
+          if (id) {
+            mapOne(obj, id);
           }
-          resolve(result.ok);
+          if (toBson && fromBson) {
+            fromBson(obj);
+          }
+          resolve(getAffectedRow(result));
         }
       });
     }));
   } else {
-    return insert(collection, object);
+    return collection.insert(object).then(r => {
+      const v = r['insertedId'];
+      if (v && id && id.length > 0) {
+        object[id] = v;
+      }
+      if (fromBson) {
+        fromBson(object);
+      }
+      return r.insertedCount;
+    });
   }
 }
-export function upsertMany<T>(collection: Collection, objects: T[], idName?: string): Promise<number> {
+export function upsertWithFilter<T>(collection: Collection, obj: T, filter: FilterQuery<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+  if (toBson) {
+    obj = toBson(obj);
+  }
+  return new Promise<number>(((resolve, reject) => {
+    collection.findOneAndUpdate(filter, { $set: obj }, {
+      upsert: true,
+    }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (toBson && fromBson) {
+          fromBson(obj);
+        }
+        resolve(getAffectedRow(result));
+      }
+    });
+  }));
+}
+export function upsertMany<T>(collection: Collection, objects: T[], id?: string): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
     const operations = [];
-    revertArray(objects, idName);
+    revertArray(objects, id);
     for (const object of objects) {
-      if ((object as any)['_id']) {
+      if (object['_id']) {
         operations.push({
           updateOne: {
-            filter: { _id: (object as any)['_id'] },
+            filter: { _id: object['_id'] },
             update: { $set: object },
             upsert: true,
           },
@@ -297,15 +413,13 @@ export function deleteByIds(collection: Collection, _ids: any[]): Promise<number
     });
   }));
 }
-export function deleteFields<T>(collection: Collection, object: T, filter: PullOperator<T>, idName?: string): Promise<number> {
+export function deleteFields<T>(collection: Collection, object: T, filter: PullOperator<T>, id?: string): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
-    const obj: any = revertOne(object, idName);
+    const obj: any = revertOne(object, id);
     if (!obj['_id']) {
-      return reject(new Error('Cannot updateOne an Object that do not have _id field.'));
+      return reject(new Error('Cannot delete an object that do not have _id field: ' + JSON.stringify(obj)));
     }
-    collection.findOneAndUpdate({ _id: obj['_id'] }, { $pull: filter }, {
-      returnOriginal: false,
-    }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+    collection.findOneAndUpdate({ _id: obj['_id'] }, { $pull: filter }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
       if (err) {
         return reject(err);
       } else {
@@ -330,33 +444,33 @@ export function findWithAggregate<T>(collection: Collection, pipeline: object[])
     });
   }));
 }
-export function revertOne(obj: any, idName?: string): any {
-  if (idName && idName.length > 0) {
-    obj['_id'] = obj[idName];
-    delete obj[idName];
+export function revertOne(obj: any, id?: string): any {
+  if (id && id.length > 0) {
+    obj['_id'] = obj[id];
+    delete obj[id];
   }
   return obj;
 }
-export function revertArray<T>(objs: T[], idName?: string): T[] {
-  if (!objs || !idName) {
+export function revertArray<T>(objs: T[], id?: string): T[] {
+  if (!objs || !id) {
     return objs;
   }
-  if (idName && idName.length > 0) {
+  if (id && id.length > 0) {
     const length = objs.length;
     for (let i = 0; i < length; i++) {
       const obj: any = objs[i];
-      obj['_id'] = obj[idName];
-      delete obj[idName];
+      obj['_id'] = obj[id];
+      delete obj[id];
     }
   }
   return objs;
 }
-export function mapOne(obj: any, idName?: string, m?: StringMap): any {
-  if (!obj || !idName) {
+export function mapOne(obj: any, id?: string, m?: StringMap): any {
+  if (!obj || !id) {
     return obj;
   }
-  if (idName && idName.length > 0) {
-    obj[idName] = obj['_id'];
+  if (id && id.length > 0) {
+    obj[id] = obj['_id'];
     delete obj['_id'];
   }
   if (m) {
@@ -373,7 +487,7 @@ export function _mapOne<T>(obj: T, m: StringMap): any {
     if (!k0) {
       k0 = key;
     }
-    obj2[k0] = (obj as any)[key];
+    obj2[k0] = obj[key];
   }
   return obj2;
 }
@@ -392,9 +506,108 @@ export function mapArray<T>(results: T[], m?: StringMap): T[] {
       if (!k0) {
         k0 = key;
       }
-      obj2[k0] = (obj as any)[key];
+      obj2[k0] = obj[key];
     }
     objs.push(obj2);
   }
   return objs;
+}
+export function buildProject<T>(fields: string[], notIncludeId?: boolean): SchemaMember<T, ProjectionOperators | number | boolean | any> {
+  if (!fields || fields.length === 0) {
+    return undefined;
+  }
+  const p: any = {};
+  for (const s of fields) {
+    p[s] = 1;
+  }
+  if (!notIncludeId) {
+    p['_id'] = 1;
+  }
+  return p;
+}
+export function fromPoints<T>(s: T[], geo?: string, latitude?: string, longitude?: string): T[] {
+  if (!geo) {
+    geo = 'geo';
+  }
+  if (!latitude) {
+    latitude = 'latitude';
+  }
+  if (!longitude) {
+    longitude = 'longitude';
+  }
+  return s.map(o => fromPoint(o, geo, latitude, longitude));
+}
+export function fromPoint<T>(v: T, geo: string, latitude: string, longitude: string): T {
+  if (!v) {
+    return v;
+  }
+  const point: any = v[geo];
+  if (!point) {
+    return v;
+  }
+  const coordinates = point['coordinates'];
+  if (!coordinates || !Array.isArray(coordinates)) {
+    return v;
+  }
+  if (coordinates.length < 2) {
+    return v;
+  }
+  const lat = coordinates[0];
+  const long = coordinates[1];
+  if (typeof lat !== 'number' || typeof long !== 'number') {
+    return v;
+  }
+  v[latitude] = lat;
+  v[longitude] = long;
+  delete v[geo];
+  return v;
+}
+export function toPoints<T>(s: T[], geo?: string, latitude?: string, longitude?: string): T[] {
+  if (!geo) {
+    geo = 'geo';
+  }
+  if (!latitude) {
+    latitude = 'latitude';
+  }
+  if (!longitude) {
+    longitude = 'longitude';
+  }
+  return s.map(o => toPoint(o, geo, latitude, longitude));
+}
+export function toPoint<T>(v: T, geo: string, latitude: string, longitude: string): T {
+  if (!v) {
+    return v;
+  }
+  const lat = v[latitude];
+  const long = v[longitude];
+  if (typeof lat !== 'number' || typeof long !== 'number') {
+    return v;
+  }
+  const point = { type: 'Point', coordinates: [lat, long] };
+  v[geo] = point;
+  delete v[latitude];
+  delete v[longitude];
+  return v;
+}
+
+export class PointMapper<T> {
+  constructor(public geo?: string, public latitude?: string, public longitude?: string) {
+    if (!geo) {
+      this.geo = 'geo';
+    }
+    if (!latitude) {
+      this.latitude = 'latitude';
+    }
+    if (!longitude) {
+      this.longitude = 'longitude';
+    }
+    this.fromPoint = this.fromPoint.bind(this);
+    this.toPoint = this.toPoint.bind(this);
+  }
+  fromPoint(model: T): T {
+    return fromPoint(model, this.geo, this.latitude, this.longitude);
+  }
+  toPoint(model: T): T {
+    return toPoint(model, this.geo, this.latitude, this.longitude);
+  }
 }

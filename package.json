@@ -1,6 +1,6 @@
 {
   "name": "mongodb-extention",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "mongodb",
   "main": "./lib/index.js",
   "types": "./src/index.ts",
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com/common-ts/mongo"
+    "url": "git@github.com/core-ts/mongo"
   },
   "keywords": [
     "mongodb"
