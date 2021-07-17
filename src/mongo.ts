@@ -67,6 +67,10 @@ export async function findWithMap<T>(collection: Collection, query: FilterQuery<
     return mapArray(objects, m);
   }
 }
+
+export function findAllWithMap<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, project?: any): Promise<T[]> {
+  return findWithMap(collection, query, id, m, sort, undefined, undefined, project);
+}
 export function find<T>(collection: Collection, query: FilterQuery<T>, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: SchemaMember<T, ProjectionOperators | number | boolean | any>): Promise<T[]> {
   return new Promise<T[]>((resolve, reject) => {
     let cursor = collection.find(query);
@@ -84,6 +88,9 @@ export function find<T>(collection: Collection, query: FilterQuery<T>, sort?: st
     }
     cursor.toArray((err, items: T[]) => err ? reject(err) : resolve(items));
   });
+}
+export function findAll<T>(collection: Collection, query: FilterQuery<T>, sort?: string | [string, number][] | SortOptionObject<T>, project?: SchemaMember<T, ProjectionOperators | number | boolean | any>): Promise<T[]> {
+  return find<T>(collection, query, sort, undefined, undefined, project);
 }
 
 export async function insert<T>(collection: Collection, obj: T, id?: string, handleDuplicate?: boolean, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
@@ -491,8 +498,31 @@ export function _mapOne<T>(obj: T, m: StringMap): any {
   }
   return obj2;
 }
+export function map<T>(obj: T, m?: StringMap): any {
+  if (!m) {
+    return obj;
+  }
+  const mkeys = Object.keys(m);
+  if (mkeys.length === 0) {
+    return obj;
+  }
+  const obj2: any = {};
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    let k0 = m[key];
+    if (!k0) {
+      k0 = key;
+    }
+    obj2[k0] = obj[key];
+  }
+  return obj2;
+}
 export function mapArray<T>(results: T[], m?: StringMap): T[] {
   if (!m) {
+    return results;
+  }
+  const mkeys = Object.keys(m);
+  if (mkeys.length === 0) {
     return results;
   }
   const objs = [];
@@ -506,19 +536,27 @@ export function mapArray<T>(results: T[], m?: StringMap): T[] {
       if (!k0) {
         k0 = key;
       }
-      obj2[k0] = obj[key];
+      obj2[k0] = (obj as any)[key];
     }
     objs.push(obj2);
   }
   return objs;
 }
-export function buildProject<T>(fields: string[], notIncludeId?: boolean): SchemaMember<T, ProjectionOperators | number | boolean | any> {
+export function buildProject<T>(fields: string[], all?: string[], notIncludeId?: boolean): SchemaMember<T, ProjectionOperators | number | boolean | any> {
   if (!fields || fields.length === 0) {
     return undefined;
   }
   const p: any = {};
-  for (const s of fields) {
-    p[s] = 1;
+  if (all) {
+    for (const s of fields) {
+      if (all.includes(s)) {
+        p[s] = 1;
+      }
+    }
+  } else {
+    for (const s of fields) {
+      p[s] = 1;
+    }
   }
   if (!notIncludeId) {
     p['_id'] = 1;
