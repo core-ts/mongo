@@ -35,6 +35,26 @@ function _findOne<T>(collection: Collection, query: FilterQuery<T>): Promise<T> 
     collection.findOne(query, (err, item: T) => err ? reject(err) : resolve(item));
   });
 }
+export function getFieldsOf(fields: string[], all?: string[]): string[] {
+  if (!fields || fields.length === 0) {
+    return undefined;
+  }
+  const existFields: string[] = [];
+  if (all) {
+    for (const s of fields) {
+      if (all.includes(s)) {
+        existFields.push(s);
+      }
+    }
+    if (existFields.length === 0) {
+      return undefined;
+    } else {
+      return existFields;
+    }
+  } else {
+    return fields;
+  }
+}
 export function getFields<T>(collection: Collection, field: string, values: T[], noSort?: boolean): Promise<T[]> {
   const query: any = {};
   query[field] = { $in: values };
@@ -52,6 +72,9 @@ export function getFields<T>(collection: Collection, field: string, values: T[],
     }
     return r;
   });
+}
+export function findAllWithMap<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, project?: any): Promise<T[]> {
+  return findWithMap(collection, query, id, m, sort, undefined, undefined, project);
 }
 export async function findWithMap<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: any): Promise<T[]> {
   const objects = await find<T>(collection, query, sort, limit, skip, project);
@@ -491,8 +514,31 @@ export function _mapOne<T>(obj: T, m: StringMap): any {
   }
   return obj2;
 }
+export function map<T>(obj: T, m?: StringMap): any {
+  if (!m) {
+    return obj;
+  }
+  const mkeys = Object.keys(m);
+  if (mkeys.length === 0) {
+    return obj;
+  }
+  const obj2: any = {};
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    let k0 = m[key];
+    if (!k0) {
+      k0 = key;
+    }
+    obj2[k0] = obj[key];
+  }
+  return obj2;
+}
 export function mapArray<T>(results: T[], m?: StringMap): T[] {
   if (!m) {
+    return results;
+  }
+  const mkeys = Object.keys(m);
+  if (mkeys.length === 0) {
     return results;
   }
   const objs = [];
@@ -512,13 +558,45 @@ export function mapArray<T>(results: T[], m?: StringMap): T[] {
   }
   return objs;
 }
-export function buildProject<T>(fields: string[], notIncludeId?: boolean): SchemaMember<T, ProjectionOperators | number | boolean | any> {
+export function buildProject<T>(fields: string[], all?: string[], mp?: StringMap, notIncludeId?: boolean): SchemaMember<T, ProjectionOperators | number | boolean | any> {
   if (!fields || fields.length === 0) {
     return undefined;
   }
   const p: any = {};
-  for (const s of fields) {
-    p[s] = 1;
+  if (mp) {
+    if (all) {
+      for (const s of fields) {
+        if (all.includes(s)) {
+          const s2 = mp[s];
+          if (s2) {
+            p[s2] = 1;
+          } else {
+            p[s] = 1;
+          }
+        }
+      }
+    } else {
+      for (const s of fields) {
+        const s2 = mp[s];
+        if (s2) {
+          p[s2] = 1;
+        } else {
+          p[s] = 1;
+        }
+      }
+    }
+  } else {
+    if (all) {
+      for (const s of fields) {
+        if (all.includes(s)) {
+          p[s] = 1;
+        }
+      }
+    } else {
+      for (const s of fields) {
+        p[s] = 1;
+      }
+    }
   }
   if (!notIncludeId) {
     p['_id'] = 1;
