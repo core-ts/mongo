@@ -90,6 +90,9 @@ export async function findWithMap<T>(collection: Collection, query: FilterQuery<
     return mapArray(objects, m);
   }
 }
+export function findAll<T>(collection: Collection, query: FilterQuery<T>, sort?: string | [string, number][] | SortOptionObject<T>, project?: SchemaMember<T, ProjectionOperators | number | boolean | any>): Promise<T[]> {
+  return find<T>(collection, query, sort, undefined, undefined, project);
+}
 export function find<T>(collection: Collection, query: FilterQuery<T>, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: SchemaMember<T, ProjectionOperators | number | boolean | any>): Promise<T[]> {
   return new Promise<T[]>((resolve, reject) => {
     let cursor = collection.find(query);
