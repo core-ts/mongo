@@ -23,6 +23,7 @@ export interface Attribute {
   field?: string;
   type?: DataType;
   match?: MatchType;
+  q?: boolean;
   key?: boolean;
   version?: boolean;
 }
