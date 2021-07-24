@@ -35,27 +35,27 @@ function _findOne<T>(collection: Collection, query: FilterQuery<T>): Promise<T> 
     collection.findOne(query, (err, item: T) => err ? reject(err) : resolve(item));
   });
 }
-export function getFieldsOf(fields: string[], all?: string[]): string[] {
+export function getFields(fields: string[], all?: string[]): string[] {
   if (!fields || fields.length === 0) {
     return undefined;
   }
-  const existFields: string[] = [];
+  const ex: string[] = [];
   if (all) {
     for (const s of fields) {
       if (all.includes(s)) {
-        existFields.push(s);
+        ex.push(s);
       }
     }
-    if (existFields.length === 0) {
+    if (ex.length === 0) {
       return undefined;
     } else {
-      return existFields;
+      return ex;
     }
   } else {
     return fields;
   }
 }
-export function getFields<T>(collection: Collection, field: string, values: T[], noSort?: boolean): Promise<T[]> {
+export function valueOf<T>(collection: Collection, field: string, values: T[], noSort?: boolean): Promise<T[]> {
   const query: any = {};
   query[field] = { $in: values };
   const project: any = {};
