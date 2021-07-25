@@ -81,8 +81,8 @@ export async function findWithMap<T>(collection: Collection, query: FilterQuery<
   for (const obj of objects) {
     if (id && id !== '') {
       obj[id] = obj['_id'];
+      delete obj['_id'];
     }
-    delete obj['_id'];
   }
   if (!m) {
     return objects;
