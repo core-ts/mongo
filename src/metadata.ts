@@ -26,10 +26,31 @@ export interface Attribute {
   name?: string;
   field?: string;
   type?: DataType;
+  format?: FormatType;
+  required?: boolean;
   match?: MatchType;
-  q?: boolean;
+  default?: string|number|Date;
   key?: boolean;
+  unique?: boolean;
+  q?: boolean;
+  noinsert?: boolean;
+  noupdate?: boolean;
+  nopatch?: boolean;
   version?: boolean;
+  length?: number;
+  min?: number;
+  max?: number;
+  gt?: number;
+  lt?: number;
+  precision?: number;
+  scale?: number;
+  exp?: RegExp|string;
+  code?: string;
+  noformat?: boolean;
+  ignored?: boolean;
+  jsonField?: string;
+  link?: string;
+  typeof?: Attributes;
 }
 export interface Attributes {
   [key: string]: Attribute;
