@@ -2,7 +2,7 @@ import {Collection} from 'mongodb';
 import {insert, patch, update, upsert} from './mongo';
 
 export class MongoInserter<T> {
-  constructor(protected collection: Collection, protected id: string, protected map?: (v: T) => T) {
+  constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
   }
   write(obj: T): Promise<number> {
@@ -10,7 +10,7 @@ export class MongoInserter<T> {
   }
 }
 export class MongoUpdater<T> {
-  constructor(protected collection: Collection, protected id: string, protected map?: (v: T) => T) {
+  constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
   }
   write(obj: T): Promise<number> {
@@ -18,7 +18,7 @@ export class MongoUpdater<T> {
   }
 }
 export class MongoPatcher<T> {
-  constructor(protected collection: Collection, protected id: string, protected map?: (v: T) => T) {
+  constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
   }
   write(obj: T): Promise<number> {
@@ -26,7 +26,7 @@ export class MongoPatcher<T> {
   }
 }
 export class MongoUpserter<T> {
-  constructor(protected collection: Collection, protected id: string, protected map?: (v: T) => T) {
+  constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
   }
   write(obj: T): Promise<number> {

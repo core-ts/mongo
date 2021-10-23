@@ -1,11 +1,12 @@
 import {FilterQuery} from 'mongodb';
 import {Attribute, Attributes} from './metadata';
 
-export function buildQuery<T, S>(s: S, attrs?: Attributes, sq?: string, strExcluding?: string): FilterQuery<T> {
+export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcluding?: string): FilterQuery<T> {
   const a: any = {};
   const b: any = {};
-  let q: string;
-  let excluding: string[]|number[];
+  const s: any = s0;
+  let q: string | undefined;
+  let excluding: string[]|number[] | undefined;
   if (sq && sq.length > 0) {
     q = s[sq];
     delete s[sq];
@@ -118,7 +119,7 @@ export function buildQuery<T, S>(s: S, attrs?: Attributes, sq?: string, strExclu
     for (const field of qkeys) {
       const attr = attrs[field];
       if (attr.q && (attr.type === undefined || attr.type === 'string') && !ex.includes(field)) {
-        c.push(buildQ(field, attr.match, q));
+        c.push(buildQ(field, q, attr.match));
       }
     }
   }
@@ -135,8 +136,8 @@ export function buildQuery<T, S>(s: S, attrs?: Attributes, sq?: string, strExclu
 export function isEmpty(s: string): boolean {
   return !(s && s.length > 0);
 }
-export function buildQ(field: string, match: string, q: string): any {
-  const o = {};
+export function buildQ(field: string, q: string, match?: string): any {
+  const o: any = {};
   if (match === 'equal') {
     o[field] = q;
   } else if (match === 'prefix') {
@@ -146,7 +147,7 @@ export function buildQ(field: string, match: string, q: string): any {
   }
   return o;
 }
-export function buildMatch(v: string, match: string): string|RegExp {
+export function buildMatch(v: string, match?: string): string|RegExp {
   if (match === 'equal') {
     return v;
   } else if (match === 'prefix') {
@@ -158,7 +159,7 @@ export function buildMatch(v: string, match: string): string|RegExp {
 export function isDateRange<T>(obj: T): boolean {
   const keys: string[] = Object.keys(obj);
   for (const key of keys) {
-    const v = obj[key];
+    const v = (obj as any)[key];
     if (!(v instanceof Date)) {
       return false;
     }
@@ -168,7 +169,7 @@ export function isDateRange<T>(obj: T): boolean {
 export function isNumberRange<T>(obj: T): boolean {
   const keys: string[] = Object.keys(obj);
   for (const key of keys) {
-    const v = obj[key];
+    const v = (obj as any)[key];
     if (typeof v !== 'number') {
       return false;
     }

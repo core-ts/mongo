@@ -5,7 +5,7 @@ import {count, findOne, findWithMap, StringMap} from './mongo';
 
 export class MongoLoader<T, ID> {
   protected id?: string;
-  protected attributes: Attributes;
+  protected attributes?: Attributes;
   protected idObjectId?: boolean;
   protected map?: StringMap;
   protected collection: Collection;
@@ -25,23 +25,30 @@ export class MongoLoader<T, ID> {
     this.load = this.load.bind(this);
     this.exist = this.exist.bind(this);
   }
-  metadata(): Attributes {
+  metadata(): Attributes | undefined {
     return this.attributes;
   }
   all(): Promise<T[]> {
-    if (this.fromBson) {
-      return findWithMap<T>(this.collection, {}, this.id, this.map).then(v => v.map(o => this.fromBson(o)));
+    const fn = this.fromBson;
+    if (fn) {
+      return findWithMap<T>(this.collection, {}, this.id, this.map).then(v => v.map(o => fn(o)));
     } else {
       return findWithMap<T>(this.collection, {}, this.id, this.map);
     }
   }
   load(id: ID): Promise<T> {
     const query: any = { _id: (this.idObjectId ? new ObjectId('' + id) : '' + id) };
-    if (this.fromBson) {
-      return findOne<T>(this.collection, query, this.id, this.map).then(v => this.fromBson(v));
-    } else {
-      return findOne<T>(this.collection, query, this.id, this.map);
-    }
+    return findOne<T>(this.collection, query, this.id, this.map).then(v => {
+      if (v) {
+        if (this.fromBson) {
+          return this.fromBson(v);
+        } else {
+          return v;
+        }
+      } else {
+        return v;
+      }
+    });
   }
   exist(id: ID): Promise<boolean> {
     const query = { _id: (this.idObjectId ? new ObjectId('' + id) : '' + id) };

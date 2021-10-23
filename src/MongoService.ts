@@ -25,9 +25,9 @@ export class MongoService<T, ID, S> extends MongoWriter<T, ID> {
   }
   search(s: S, limit?: number, skip?: number, fields?: string[]): Promise<SearchResult<T>> {
     const st = (this.sort ? this.sort : 'sort');
-    const sn = s[st] as string;
+    const sn = (s as any)[st] as string;
     const so = this.buildSort(sn, this.attributes);
-    delete s[st];
+    delete (s as any)[st];
     const query = this.buildQuery(s, this.attributes);
     return buildSearchResult<T>(this.collection, query, so, limit, skip, fields, this.id, this.map, this.fromBson);
   }

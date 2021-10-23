@@ -1,6 +1,6 @@
-export function getCollectionName(model: Model, collectionName?: string) {
-  const n: string = (collectionName ? collectionName : (model.collection ? model.collection : (model.source ? model.source : model.name)));
-  return n;
+export function getCollectionName(model: Model, collectionName?: string): string {
+  const n = (collectionName ? collectionName : (model.collection ? model.collection : (model.source ? model.source : model.name)));
+  return (n ? n : '');
 }
 
 interface StringMap {
@@ -61,7 +61,10 @@ export interface Metadata {
   objectId?: boolean;
   map?: StringMap;
 }
-export function getVersion(attributes?: Attributes): string {
+export function getVersion(attributes?: Attributes): string | undefined {
+  if (!attributes) {
+    return undefined;
+  }
   const keys: string[] = Object.keys(attributes);
   for (const key of keys) {
     const attr: Attribute = attributes[key];
@@ -88,7 +91,10 @@ export function build(attributes?: Attributes): Metadata {
   }
   return sub;
 }
-export function buildMap(attributes?: Attributes): StringMap {
+export function buildMap(attributes?: Attributes): StringMap | undefined {
+  if (!attributes) {
+    return undefined;
+  }
   const map: any = {};
   const keys: string[] = Object.keys(attributes);
   let c = 0;

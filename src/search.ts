@@ -21,8 +21,8 @@ export function buildSearchResult<T>(collection: Collection, query: FilterQuery<
       let list = list2;
       if (idName && idName !== '') {
         for (const obj of list) {
-          obj[idName] = obj['_id'];
-          delete obj['_id'];
+          (obj as any)[idName] = (obj as any)['_id'];
+          delete (obj as any)['_id'];
         }
       }
       if (map) {
@@ -38,8 +38,8 @@ export function buildSearchResult<T>(collection: Collection, query: FilterQuery<
     return find(collection, query, sort, undefined, undefined, project).then(list => {
       if (idName && idName !== '') {
         for (const obj of list) {
-          obj[idName] = obj['_id'];
-          delete obj['_id'];
+          (obj as any)[idName] = (obj as any)['_id'];
+          delete (obj as any)['_id'];
         }
       }
       if (map) {
@@ -54,7 +54,7 @@ export function buildSearchResult<T>(collection: Collection, query: FilterQuery<
   }
 }
 export function buildSort<T>(sort: string, map?: Attributes|StringMap): SortOptionObject<T> {
-  const sort2 = {};
+  const sort2: any = {};
   if (sort && sort.length > 0) {
     const sorts = sort.split(',');
     for (const st of sorts) {

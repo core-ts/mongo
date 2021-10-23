@@ -35,7 +35,7 @@ function _findOne<T>(collection: Collection, query: FilterQuery<T>): Promise<T> 
     collection.findOne(query, (err, item: T) => err ? reject(err) : resolve(item));
   });
 }
-export function getFields(fields: string[], all?: string[]): string[] {
+export function getFields(fields: string[], all?: string[]): string[] | undefined {
   if (!fields || fields.length === 0) {
     return undefined;
   }
@@ -68,7 +68,7 @@ export function valueOf<T>(collection: Collection, field: string, values: T[], n
   return find(collection, query, sort, undefined, undefined, project).then(v => {
     const r: T[] = [];
     for (const s of v) {
-      r.push(s[field]);
+      r.push((s as any)[field]);
     }
     return r;
   });
@@ -80,8 +80,8 @@ export async function findWithMap<T>(collection: Collection, query: FilterQuery<
   const objects = await find<T>(collection, query, sort, limit, skip, project);
   for (const obj of objects) {
     if (id && id !== '') {
-      obj[id] = obj['_id'];
-      delete obj['_id'];
+      (obj as any)[id] = (obj as any)['_id'];
+      delete (obj as any)['_id'];
     }
   }
   if (!m) {
@@ -125,9 +125,13 @@ export async function insert<T>(collection: Collection, obj: T, id?: string, han
     }
     return value.insertedCount;
   } catch (err) {
-    if (handleDuplicate && err && err.errmsg) {
-      if (err.errmsg.indexOf('duplicate key error collection:') >= 0) {
-        if (err.errmsg.indexOf('dup key: { _id:') >= 0) {
+    mapOne(obj, id);
+    if (toBson && fromBson) {
+      fromBson(obj);
+    }
+    if (handleDuplicate && err && (err as any).errmsg) {
+      if ((err as any).errmsg.indexOf('duplicate key error collection:') >= 0) {
+        if ((err as any).errmsg.indexOf('dup key: { _id:') >= 0) {
           return 0;
         } else {
           return -1;
@@ -142,15 +146,15 @@ export async function insertMany<T>(collection: Collection, objs: T[], id?: stri
     const value = await collection.insertMany(revertArray(objs, id));
     if (id) {
       for (let i = 0; i < value.ops.length; i++) {
-        objs[i][id] = value.ops[i]['_id'];
-        delete objs[i]['_id'];
+        (objs[i] as any)[id] = value.ops[i]['_id'];
+        delete (objs[i] as any)['_id'];
       }
     }
     return value.insertedCount;
   } catch (err) {
     if (err) {
-      if (err.errmsg.indexOf('duplicate key error collection:') >= 0) {
-        if (err.errmsg.indexOf('dup key: { _id:') >= 0) {
+      if ((err as any).errmsg.indexOf('duplicate key error collection:') >= 0) {
+        if ((err as any).errmsg.indexOf('dup key: { _id:') >= 0) {
           return 0;
         } else {
           return -1;
@@ -163,20 +167,20 @@ export async function insertMany<T>(collection: Collection, objs: T[], id?: stri
 export function patch<T>(collection: Collection, obj: T, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
     revertOne(obj, id);
-    if (!obj['_id']) {
+    if (!(obj as any)['_id']) {
       return reject(new Error('Cannot patch an object that do not have _id field: ' + JSON.stringify(obj)));
     }
     if (toBson) {
       obj = toBson(obj);
     }
-    collection.findOneAndUpdate({ _id: obj['_id'] }, { $set: obj }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
-      if (err) {
-        reject(err);
-      } else {
-        mapOne(obj, id);
+    collection.findOneAndUpdate({ _id: (obj as any)['_id'] }, { $set: obj }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+      mapOne(obj, id);
         if (toBson && fromBson) {
           fromBson(obj);
         }
+      if (err) {
+        reject(err);
+      } else {
         resolve(getAffectedRow(result));
       }
     });
@@ -186,7 +190,7 @@ export function getAffectedRow<T>(result: FindAndModifyWriteOpResultObject<T>): 
   if (result.lastErrorObject) {
     return result.lastErrorObject.n;
   } else {
-    return result.ok;
+    return (result.ok ? result.ok : 0);
   }
 }
 export function patchWithFilter<T>(collection: Collection, obj: T, filter: FilterQuery<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
@@ -209,20 +213,20 @@ export function patchWithFilter<T>(collection: Collection, obj: T, filter: Filte
 export function update<T>(collection: Collection, obj: T, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
     revertOne(obj, id);
-    if (!obj['_id']) {
+    if (!(obj as any)['_id']) {
       return reject(new Error('Cannot update an object that do not have _id field: ' + JSON.stringify(obj)));
     }
     if (toBson) {
       obj = toBson(obj);
     }
-    collection.findOneAndReplace({ _id: obj['_id'] }, (obj as any), (err, result: FindAndModifyWriteOpResultObject<T>) => {
-      if (err) {
-        reject(err);
-      } else {
-        mapOne(obj, id);
+    collection.findOneAndReplace({ _id: (obj as any)['_id'] }, (obj as any), (err, result: FindAndModifyWriteOpResultObject<T>) => {
+      mapOne(obj, id);
         if (toBson && fromBson) {
           fromBson(obj);
         }
+      if (err) {
+        reject(err);
+      } else {
         resolve(getAffectedRow(result));
       }
     });
@@ -258,10 +262,14 @@ export function updateFields<T>(collection: Collection, object: T, arr: PushOper
       if (err) {
         return reject(err);
       } else {
-        if (fromBson) {
-          return resolve(fromBson(result.value));
+        if (result.value) {
+          if (fromBson) {
+            return resolve(fromBson(result.value));
+          } else {
+            return resolve(result.value);
+          }
         } else {
-          return resolve(result.value);
+          return resolve(object);
         }
       }
     });
@@ -273,7 +281,11 @@ export function updateByQuery<T>(collection: Collection, query: FilterQuery<T>, 
       if (err) {
         return reject(err);
       } else {
-        return resolve(result.value);
+        if (result.value) {
+          return resolve(result.value);
+        } else {
+          return resolve(setValue as any);
+        }
       }
     });
   }));
@@ -312,7 +324,7 @@ export function updateMany<T>(collection: Collection, objects: T[], id?: string)
       if (err) {
         return reject(err);
       } else {
-        return resolve(result.modifiedCount);
+        return resolve(result.modifiedCount ? result.modifiedCount : 0);
       }
     });
   }));
@@ -327,15 +339,15 @@ export function upsert<T>(collection: Collection, object: T, id?: string, toBson
       collection.findOneAndUpdate({ _id: obj['_id'] }, { $set: obj }, {
         upsert: true
       }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
+        if (id) {
+          mapOne(obj, id);
+        }
+        if (toBson && fromBson) {
+          fromBson(obj);
+        }
         if (err) {
           reject(err);
         } else {
-          if (id) {
-            mapOne(obj, id);
-          }
-          if (toBson && fromBson) {
-            fromBson(obj);
-          }
           resolve(getAffectedRow(result));
         }
       });
@@ -344,7 +356,7 @@ export function upsert<T>(collection: Collection, object: T, id?: string, toBson
     return collection.insertOne(object).then(r => {
       const v = r['insertedId'];
       if (v && id && id.length > 0) {
-        object[id] = v;
+        (object as any)[id] = v;
       }
       if (fromBson) {
         fromBson(object);
@@ -377,10 +389,10 @@ export function upsertMany<T>(collection: Collection, objects: T[], id?: string)
     const operations = [];
     revertArray(objects, id);
     for (const object of objects) {
-      if (object['_id']) {
+      if ((object as any)['_id']) {
         operations.push({
           updateOne: {
-            filter: { _id: object['_id'] },
+            filter: { _id: (object as any)['_id'] },
             update: { $set: object },
             upsert: true,
           },
@@ -397,18 +409,28 @@ export function upsertMany<T>(collection: Collection, objects: T[], id?: string)
       if (err) {
         return reject(err);
       }
-      return resolve(result.insertedCount + result.modifiedCount + result.upsertedCount);
+      let ct = 0;
+      if (result.insertedCount) {
+        ct = ct + result.insertedCount;
+      }
+      if (result.modifiedCount) {
+        ct = ct + result.modifiedCount;
+      }
+      if (result.upsertedCount) {
+        ct = ct + result.upsertedCount;
+      }
+      return resolve(ct);
     });
   }));
 }
 export function deleteMany<T>(collection: Collection, query: FilterQuery<T>): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
-    collection.deleteMany(query, (err, result: DeleteWriteOpResultObject) => err ? reject(err) : resolve(result.deletedCount ? result.deletedCount : 1));
+    collection.deleteMany(query, (err, result: DeleteWriteOpResultObject) => err ? reject(err) : resolve(result.deletedCount ? result.deletedCount : 0));
   }));
 }
 export function deleteOne<T>(collection: Collection, query: FilterQuery<T>): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
-    collection.deleteOne(query, (err, result: DeleteWriteOpResultObject) => err ? reject(err) : resolve(result.deletedCount ? result.deletedCount : 1));
+    collection.deleteOne(query, (err, result: DeleteWriteOpResultObject) => err ? reject(err) : resolve(result.deletedCount ? result.deletedCount : 0));
   }));
 }
 export function deleteById(collection: Collection, _id: any): Promise<number> {
@@ -416,7 +438,7 @@ export function deleteById(collection: Collection, _id: any): Promise<number> {
     if (!_id) {
       return resolve(0);
     }
-    collection.deleteOne({ _id }, (err, result: DeleteWriteOpResultObject) => err ? reject(err) : resolve(result.deletedCount));
+    collection.deleteOne({ _id }, (err, result: DeleteWriteOpResultObject) => err ? reject(err) : resolve(result.deletedCount ? result.deletedCount : 0));
   }));
 }
 export function deleteByIds(collection: Collection, _ids: any[]): Promise<number> {
@@ -435,7 +457,7 @@ export function deleteByIds(collection: Collection, _ids: any[]): Promise<number
     },
     ];
     collection.bulkWrite(operations, (err, result: BulkWriteOpResultObject) => {
-      return err ? reject(err) : resolve(result.deletedCount);
+      return err ? reject(err) : resolve(result.deletedCount ? result.deletedCount : 0);
     });
   }));
 }
@@ -449,7 +471,7 @@ export function deleteFields<T>(collection: Collection, object: T, filter: PullO
       if (err) {
         return reject(err);
       } else {
-        return resolve(result.ok);
+        return resolve(result.ok ? result.ok : 0);
       }
     });
   }));
@@ -513,7 +535,7 @@ export function _mapOne<T>(obj: T, m: StringMap): any {
     if (!k0) {
       k0 = key;
     }
-    obj2[k0] = obj[key];
+    obj2[k0] = (obj as any)[key];
   }
   return obj2;
 }
@@ -532,7 +554,7 @@ export function map<T>(obj: T, m?: StringMap): any {
     if (!k0) {
       k0 = key;
     }
-    obj2[k0] = obj[key];
+    obj2[k0] = (obj as any)[key];
   }
   return obj2;
 }
@@ -555,13 +577,13 @@ export function mapArray<T>(results: T[], m?: StringMap): T[] {
       if (!k0) {
         k0 = key;
       }
-      obj2[k0] = obj[key];
+      obj2[k0] = (obj as any)[key];
     }
     objs.push(obj2);
   }
   return objs;
 }
-export function buildProject<T>(fields: string[], all?: string[], mp?: StringMap, notIncludeId?: boolean): SchemaMember<T, ProjectionOperators | number | boolean | any> {
+export function buildProject<T>(fields?: string[], all?: string[], mp?: StringMap, notIncludeId?: boolean): SchemaMember<T, ProjectionOperators | number | boolean | any> | undefined {
   if (!fields || fields.length === 0) {
     return undefined;
   }
@@ -621,22 +643,16 @@ export function getMapField(name: string, mp?: StringMap): string {
 }
 
 export function fromPoints<T>(s: T[], geo?: string, latitude?: string, longitude?: string): T[] {
-  if (!geo) {
-    geo = 'geo';
-  }
-  if (!latitude) {
-    latitude = 'latitude';
-  }
-  if (!longitude) {
-    longitude = 'longitude';
-  }
-  return s.map(o => fromPoint(o, geo, latitude, longitude));
+  const g = (geo ? geo : 'geo');
+  const lat = (latitude ? latitude : 'latitude');
+  const long = (longitude ? longitude : 'longitude');
+  return s.map(o => fromPoint(o, g, lat, long));
 }
 export function fromPoint<T>(v: T, geo: string, latitude: string, longitude: string): T {
   if (!v) {
     return v;
   }
-  const point: any = v[geo];
+  const point: any = (v as any)[geo];
   if (!point) {
     return v;
   }
@@ -652,50 +668,41 @@ export function fromPoint<T>(v: T, geo: string, latitude: string, longitude: str
   if (typeof lat !== 'number' || typeof long !== 'number') {
     return v;
   }
-  v[latitude] = lat;
-  v[longitude] = long;
-  delete v[geo];
+  (v as any)[latitude] = lat;
+  (v as any)[longitude] = long;
+  delete (v as any)[geo];
   return v;
 }
 export function toPoints<T>(s: T[], geo?: string, latitude?: string, longitude?: string): T[] {
-  if (!geo) {
-    geo = 'geo';
-  }
-  if (!latitude) {
-    latitude = 'latitude';
-  }
-  if (!longitude) {
-    longitude = 'longitude';
-  }
-  return s.map(o => toPoint(o, geo, latitude, longitude));
+  const g = (geo ? geo : 'geo');
+  const lat = (latitude ? latitude : 'latitude');
+  const long = (longitude ? longitude : 'longitude');
+  return s.map(o => toPoint(o, g, lat, long));
 }
 export function toPoint<T>(v: T, geo: string, latitude: string, longitude: string): T {
   if (!v) {
     return v;
   }
-  const lat = v[latitude];
-  const long = v[longitude];
+  const lat = (v as any)[latitude];
+  const long = (v as any)[longitude];
   if (typeof lat !== 'number' || typeof long !== 'number') {
     return v;
   }
   const point = { type: 'Point', coordinates: [lat, long] };
-  v[geo] = point;
-  delete v[latitude];
-  delete v[longitude];
+  (v as any)[geo] = point;
+  delete (v as any)[latitude];
+  delete (v as any)[longitude];
   return v;
 }
 
 export class PointMapper<T> {
-  constructor(public geo?: string, public latitude?: string, public longitude?: string) {
-    if (!geo) {
-      this.geo = 'geo';
-    }
-    if (!latitude) {
-      this.latitude = 'latitude';
-    }
-    if (!longitude) {
-      this.longitude = 'longitude';
-    }
+  geo: string;
+  latitude: string;
+  longitude: string;
+  constructor(geo?: string, latitude?: string, longitude?: string) {
+    this.geo = (geo ? geo : 'geo');
+    this.latitude = (latitude ? latitude : 'latitude');
+    this.longitude = (longitude ? longitude : 'longitude');
     this.fromPoint = this.fromPoint.bind(this);
     this.toPoint = this.toPoint.bind(this);
   }

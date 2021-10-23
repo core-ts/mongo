@@ -10,13 +10,11 @@ export interface HealthChecker {
 }
 
 export class MongoChecker implements HealthChecker {
-  constructor(private db: Db, private service?: string, private timeout?: number) {
-    if (!this.timeout) {
-      this.timeout = 4200;
-    }
-    if (!this.service) {
-      this.service = 'mongo';
-    }
+  private timeout: number;
+  private service: string;
+  constructor(private db: Db, service?: string, timeout?: number) {
+    this.timeout = (timeout && timeout > 0 ? timeout : 4200);
+    this.service = (service && service.length > 0 ? service : 'mongo');
     this.check = this.check.bind(this);
     this.name = this.name.bind(this);
     this.build = this.build.bind(this);

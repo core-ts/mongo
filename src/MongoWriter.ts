@@ -18,7 +18,7 @@ export class MongoWriter<T, ID> extends MongoLoader<T, ID> {
   }
   insert(obj: T): Promise<number> {
     if (this.version && this.version.length > 0) {
-      obj[this.version] = 1;
+      (obj as any)[this.version] = 1;
     }
     return insert(this.collection, obj, this.id, true, this.toBson, this.fromBson);
   }
@@ -26,18 +26,18 @@ export class MongoWriter<T, ID> extends MongoLoader<T, ID> {
     if (!this.version) {
       return update(this.collection, obj, this.id, this.toBson, this.fromBson);
     } else {
-      const version = obj[this.version];
+      const version = (obj as any)[this.version];
       if (!version || typeof version !== 'number') {
         return update(this.collection, obj, this.id, this.toBson, this.fromBson);
       } else {
         if (this.id) {
           revertOne(obj, this.id);
         }
-        if (!obj['_id']) {
+        if (!(obj as any)['_id']) {
           return Promise.reject(new Error('Cannot update an object that do not have _id field: ' + JSON.stringify(obj)));
         }
-        obj[this.version] = 1 + version;
-        const filter: any = {_id: obj['_id'], version};
+        (obj as any)[this.version] = 1 + version;
+        const filter: any = {_id: (obj as any)['_id'], version};
         return updateWithFilter(this.collection, obj, filter, this.toBson, this.fromBson).then(r => {
           mapOne(obj, this.id, this.map);
           return (r > 0 ? r : -1);
@@ -49,18 +49,18 @@ export class MongoWriter<T, ID> extends MongoLoader<T, ID> {
     if (!this.version) {
       return patch(this.collection, obj, this.id, this.toBson, this.fromBson);
     } else {
-      const version = obj[this.version];
+      const version = (obj as any)[this.version];
       if (!version || typeof version !== 'number') {
         return patch(this.collection, obj, this.id, this.toBson, this.fromBson);
       } else {
         if (this.id) {
           revertOne(obj, this.id);
         }
-        if (!obj['_id']) {
+        if (!(obj as any)['_id']) {
           return Promise.reject(new Error('Cannot patch an object that do not have _id field: ' + JSON.stringify(obj)));
         }
-        obj[this.version] = 1 + version;
-        const filter: any = {_id: obj['_id'], version};
+        (obj as any)[this.version] = 1 + version;
+        const filter: any = {_id: (obj as any)['_id'], version};
         return patchWithFilter(this.collection, obj, filter, this.toBson, this.fromBson).then(r => {
           mapOne(obj, this.id, this.map);
           return (r > 0 ? r : -1);
@@ -72,19 +72,19 @@ export class MongoWriter<T, ID> extends MongoLoader<T, ID> {
     if (!this.version) {
       return upsert(this.collection, obj, this.id, this.toBson, this.fromBson);
     } else {
-      const version = obj[this.version];
+      const version = (obj as any)[this.version];
       if (!version || typeof version !== 'number') {
         return upsert(this.collection, obj, this.id, this.toBson, this.fromBson);
       } else {
         if (this.id) {
           revertOne(obj, this.id);
         }
-        if (!obj['_id']) {
-          obj[this.version] = 1;
+        if (!(obj as any)['_id']) {
+          (obj as any)[this.version] = 1;
           return insert(this.collection, obj, undefined, true, this.toBson, this.fromBson);
         } else {
-          obj[this.version] = 1 + version;
-          const filter: any = {_id: obj['_id'], version};
+          (obj as any)[this.version] = 1 + version;
+          const filter: any = {_id: (obj as any)['_id'], version};
           return upsertWithFilter(this.collection, obj, filter, this.toBson, this.fromBson).then(r => {
             mapOne(obj, this.id, this.map);
             return (r > 0 ? r : -1);
