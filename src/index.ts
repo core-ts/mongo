@@ -3,10 +3,13 @@ import {MongoService} from './MongoService';
 import {MongoWriter} from './MongoWriter';
 
 export {MongoLoader as MongoLoadRepository};
-export {MongoWriter as MongoGenericRepository};
 export {MongoLoader as MongoLoadService};
+export {MongoWriter as MongoGenericRepository};
 export {MongoWriter as MongoGenericService};
 export {MongoService as MongoLowCodeService};
+export {MongoService as Service};
+export {MongoService as Repository};
+export {MongoService as MongoRepository};
 
 export * from './metadata';
 export * from './MongoChecker';
