@@ -20,12 +20,14 @@ export class MongoLoader<T, ID> {
       this.map = meta.map;
     }
     this.collection = db.collection(collectionName);
-    this.metadata = this.metadata.bind(this);
+    if (this.metadata) {
+      this.metadata = this.metadata.bind(this);
+    }
     this.all = this.all.bind(this);
     this.load = this.load.bind(this);
     this.exist = this.exist.bind(this);
   }
-  metadata(): Attributes | undefined {
+  metadata?(): Attributes | undefined {
     return this.attributes;
   }
   all(): Promise<T[]> {
