@@ -1,15 +1,32 @@
 import {MongoLoader} from './MongoLoader';
-import {MongoService} from './MongoService';
+import {MongoSearchWriter} from './MongoSearchWriter';
 import {MongoWriter} from './MongoWriter';
+
+import {MongoLowCodeService} from './MongoLowCodeService';
+export {MongoLowCodeService as MongoLowCodeRepository};
+export * from './MongoLowCodeService';
 
 export {MongoLoader as MongoLoadRepository};
 export {MongoLoader as MongoLoadService};
+export {MongoLoader as MongoViewRepository};
+export {MongoLoader as MongoViewService};
+export {MongoLoader as LoadService};
+export {MongoLoader as LoadRepository};
+export {MongoLoader as ViewService};
+export {MongoLoader as ViewRepository};
 export {MongoWriter as MongoGenericRepository};
 export {MongoWriter as MongoGenericService};
-export {MongoService as MongoLowCodeService};
-export {MongoService as Service};
-export {MongoService as Repository};
-export {MongoService as MongoRepository};
+export {MongoWriter as GenericRepository};
+export {MongoWriter as GenericService};
+
+export {MongoSearchWriter as GenericSearchService};
+export {MongoSearchWriter as GenericSearchRepository};
+export {MongoSearchWriter as MongoGenericSearchService};
+export {MongoSearchWriter as MongoGenericSearchRepository};
+export {MongoSearchWriter as MongoRepository};
+export {MongoSearchWriter as MongoService};
+export {MongoSearchWriter as Service};
+export {MongoSearchWriter as Repository};
 
 export * from './metadata';
 export * from './MongoChecker';
@@ -22,5 +39,4 @@ export * from './query';
 export * from './SearchBuilder';
 export * from './one';
 export * from './batch';
-export * from './MongoService';
 export * from './AuditLogWriter';
