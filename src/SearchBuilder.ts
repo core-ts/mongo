@@ -35,7 +35,7 @@ export class SearchBuilder<T, S> {
       this.excluding = (excluding && excluding.length > 0 ? excluding : 'excluding');
       this.search = this.search.bind(this);
     }
-  search(s: S, limit?: number, skip?: number, fields?: string[]): Promise<SearchResult<T>> {
+  search(s: S, limit?: number, skip?: number|string, fields?: string[]): Promise<SearchResult<T>> {
     const st = (this.sort ? this.sort : 'sort');
     const sn = (s as any)[st] as string;
     const so = this.buildSort(sn, this.attributes);
