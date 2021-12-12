@@ -82,6 +82,9 @@ export function getField(name: string, map?: Attributes|StringMap): string {
   if (typeof x === 'string') {
     return x;
   }
+  if (x.key) {
+    return '_id';
+  }
   if (x.field) {
     return x.field;
   }
