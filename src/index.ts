@@ -18,6 +18,7 @@ export {MongoWriter as MongoGenericRepository};
 export {MongoWriter as MongoGenericService};
 export {MongoWriter as GenericRepository};
 export {MongoWriter as GenericService};
+export {MongoWriter as Repository};
 
 export {MongoSearchWriter as GenericSearchService};
 export {MongoSearchWriter as GenericSearchRepository};
@@ -26,7 +27,6 @@ export {MongoSearchWriter as MongoGenericSearchRepository};
 export {MongoSearchWriter as MongoRepository};
 export {MongoSearchWriter as MongoService};
 export {MongoSearchWriter as Service};
-export {MongoSearchWriter as Repository};
 
 export * from './metadata';
 export * from './MongoChecker';

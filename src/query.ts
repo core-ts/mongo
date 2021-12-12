@@ -68,6 +68,8 @@ export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcl
               if (isDateRange(v)) {
                 if (v['max']) {
                   b['$lte'] = v['max'];
+                } else if (v['top']) {
+                  b['$lt'] = v['top'];
                 } else if (v['endDate']) {
                   b['$lte'] = v['endDate'];
                 } else if (v['upper']) {
@@ -90,6 +92,8 @@ export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcl
               if (isNumberRange(v)) {
                 if (v['max']) {
                   b['$lte'] = v['max'];
+                } else if (v['top']) {
+                  b['$lt'] = v['top'];
                 } else if (v['upper']) {
                   b['$lt'] = v['upper'];
                 }
