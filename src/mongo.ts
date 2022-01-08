@@ -9,10 +9,9 @@ export interface MongoConfig {
 export interface StringMap {
   [key: string]: string;
 }
-export async function connectToDb(uri: string, db: string, authSource: string = 'admin', poolSize: number = 5): Promise<Db> {
+export function connectToDb(uri: string, db: string, authSource: string = 'admin', poolSize: number = 5): Promise<Db> {
   const options: MongoClientOptions = { useNewUrlParser: true, authSource, poolSize, useUnifiedTopology: true };
-  const client = await connect(uri, options);
-  return client.db(db);
+  return connect(uri, options).then(client => client.db(db));
 }
 export function connect(uri: string, options: MongoClientOptions): Promise<MongoClient> {
   return new Promise<MongoClient>((resolve, reject) => {
@@ -76,19 +75,20 @@ export function valueOf<T>(collection: Collection, field: string, values: T[], n
 export function findAllWithMap<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, project?: any): Promise<T[]> {
   return findWithMap(collection, query, id, m, sort, undefined, undefined, project);
 }
-export async function findWithMap<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: any): Promise<T[]> {
-  const objects = await find<T>(collection, query, sort, limit, skip, project);
-  for (const obj of objects) {
-    if (id && id !== '') {
-      (obj as any)[id] = (obj as any)['_id'];
-      delete (obj as any)['_id'];
+export function findWithMap<T>(collection: Collection, query: FilterQuery<T>, id?: string, m?: StringMap, sort?: string | [string, number][] | SortOptionObject<T>, limit?: number, skip?: number, project?: any): Promise<T[]> {
+  return find<T>(collection, query, sort, limit, skip, project).then(objects => {
+    for (const obj of objects) {
+      if (id && id !== '') {
+        (obj as any)[id] = (obj as any)['_id'];
+        delete (obj as any)['_id'];
+      }
     }
-  }
-  if (!m) {
-    return objects;
-  } else {
-    return mapArray(objects, m);
-  }
+    if (!m) {
+      return objects;
+    } else {
+      return mapArray(objects, m);
+    }
+  });
 }
 export function findAll<T>(collection: Collection, query: FilterQuery<T>, sort?: string | [string, number][] | SortOptionObject<T>, project?: SchemaMember<T, ProjectionOperators | number | boolean | any>): Promise<T[]> {
   return find<T>(collection, query, sort, undefined, undefined, project);
@@ -112,19 +112,18 @@ export function find<T>(collection: Collection, query: FilterQuery<T>, sort?: st
   });
 }
 
-export async function insert<T>(collection: Collection, obj: T, id?: string, handleDuplicate?: boolean, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
-  try {
-    obj = revertOne(obj, id);
-    if (toBson) {
-      obj = toBson(obj);
-    }
-    const value = await collection.insertOne(obj);
+export function insert<T>(collection: Collection, obj: T, id?: string, handleDuplicate?: boolean, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+  obj = revertOne(obj, id);
+  if (toBson) {
+    obj = toBson(obj);
+  }
+  return collection.insertOne(obj).then(value => {
     mapOne(obj, id);
     if (toBson && fromBson) {
       fromBson(obj);
     }
     return value.insertedCount;
-  } catch (err) {
+  }).catch(err => {
     mapOne(obj, id);
     if (toBson && fromBson) {
       fromBson(obj);
@@ -139,11 +138,10 @@ export async function insert<T>(collection: Collection, obj: T, id?: string, han
       }
     }
     throw err;
-  }
+  });
 }
-export async function insertMany<T>(collection: Collection, objs: T[], id?: string): Promise<number> {
-  try {
-    const value = await collection.insertMany(revertArray(objs, id));
+export function insertMany<T>(collection: Collection, objs: T[], id?: string): Promise<number> {
+  return collection.insertMany(revertArray(objs, id)).then(value => {
     if (id) {
       for (let i = 0; i < value.ops.length; i++) {
         (objs[i] as any)[id] = value.ops[i]['_id'];
@@ -151,7 +149,7 @@ export async function insertMany<T>(collection: Collection, objs: T[], id?: stri
       }
     }
     return value.insertedCount;
-  } catch (err) {
+  }).catch(err => {
     if (err) {
       if ((err as any).errmsg.indexOf('duplicate key error collection:') >= 0) {
         if ((err as any).errmsg.indexOf('dup key: { _id:') >= 0) {
@@ -162,7 +160,7 @@ export async function insertMany<T>(collection: Collection, objs: T[], id?: stri
       }
     }
     throw err;
-  }
+  });
 }
 export function patch<T>(collection: Collection, obj: T, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   return new Promise<number>(((resolve, reject) => {

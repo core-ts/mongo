@@ -13,6 +13,7 @@ export class MongoBatchInserter<T> {
     return insertMany(this.collection, list, this.id);
   }
 }
+// tslint:disable-next-line:max-classes-per-file
 export class MongoBatchUpdater<T> {
   constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
@@ -25,6 +26,7 @@ export class MongoBatchUpdater<T> {
     return updateMany(this.collection, list, this.id);
   }
 }
+// tslint:disable-next-line:max-classes-per-file
 export class MongoBatchWriter<T> {
   constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);

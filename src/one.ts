@@ -9,6 +9,7 @@ export class MongoInserter<T> {
     return insert(this.collection, obj, this.id, false, this.map);
   }
 }
+// tslint:disable-next-line:max-classes-per-file
 export class MongoUpdater<T> {
   constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
@@ -17,6 +18,7 @@ export class MongoUpdater<T> {
     return update(this.collection, obj, this.id, this.map);
   }
 }
+// tslint:disable-next-line:max-classes-per-file
 export class MongoPatcher<T> {
   constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
@@ -25,6 +27,7 @@ export class MongoPatcher<T> {
     return patch(this.collection, obj, this.id, this.map);
   }
 }
+// tslint:disable-next-line:max-classes-per-file
 export class MongoUpserter<T> {
   constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {
     this.write = this.write.bind(this);
