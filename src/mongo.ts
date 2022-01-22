@@ -184,12 +184,8 @@ export function patch<T>(collection: Collection, obj: T, id?: string, toBson?: (
     });
   }));
 }
-export function getAffectedRow<T>(result: FindAndModifyWriteOpResultObject<T>): number {
-  if (result.lastErrorObject) {
-    return result.lastErrorObject.n;
-  } else {
-    return (result.ok ? result.ok : 0);
-  }
+export function getAffectedRow<T>(res: FindAndModifyWriteOpResultObject<T>): number {
+  return res.lastErrorObject ? res.lastErrorObject.n : (res.ok ? res.ok : 0);
 }
 export function patchWithFilter<T>(collection: Collection, obj: T, filter: FilterQuery<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
     if (toBson) {
