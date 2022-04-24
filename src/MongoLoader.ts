@@ -3,6 +3,13 @@ import {Collection, Db} from 'mongodb';
 import {Attributes, build} from './metadata';
 import {count, findOne, findWithMap, StringMap} from './mongo';
 
+export type Load<T, ID> = (id: ID, ctx?: any) => Promise<T|null>;
+export type Get<T, ID> = Load<T, ID>;
+export function useGet<T, ID>(db: Db, collectionName: string, attributes: Attributes|string, fromBson?: (v: T) => T): Load<T, ID> {
+  const l = new MongoLoader<T, ID>(db, collectionName, attributes, fromBson);
+  return l.load;
+}
+export const useLoad = useGet;
 export class MongoLoader<T, ID> {
   protected id?: string;
   protected attributes?: Attributes;

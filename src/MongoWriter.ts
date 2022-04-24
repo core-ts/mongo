@@ -45,7 +45,7 @@ export class MongoWriter<T, ID> extends MongoLoader<T, ID> {
       }
     }
   }
-  patch(obj: T): Promise<number> {
+  patch(obj: Partial<T>): Promise<number> {
     if (!this.version) {
       return patch(this.collection, obj, this.id, this.toBson, this.fromBson);
     } else {

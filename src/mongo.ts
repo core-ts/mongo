@@ -162,19 +162,19 @@ export function insertMany<T>(collection: Collection, objs: T[], id?: string): P
     throw err;
   });
 }
-export function patch<T>(collection: Collection, obj: T, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+export function patch<T>(collection: Collection, obj: Partial<T>, id?: string, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   return new Promise<number>(((resolve, reject) => {
     revertOne(obj, id);
     if (!(obj as any)['_id']) {
       return reject(new Error('Cannot patch an object that do not have _id field: ' + JSON.stringify(obj)));
     }
     if (toBson) {
-      obj = toBson(obj);
+      obj = toBson(obj as any);
     }
     collection.findOneAndUpdate({ _id: (obj as any)['_id'] }, { $set: obj }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
       mapOne(obj, id);
         if (toBson && fromBson) {
-          fromBson(obj);
+          fromBson(obj as any);
         }
       if (err) {
         reject(err);
@@ -187,9 +187,9 @@ export function patch<T>(collection: Collection, obj: T, id?: string, toBson?: (
 export function getAffectedRow<T>(res: FindAndModifyWriteOpResultObject<T>): number {
   return res.lastErrorObject ? res.lastErrorObject.n : (res.ok ? res.ok : 0);
 }
-export function patchWithFilter<T>(collection: Collection, obj: T, filter: FilterQuery<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+export function patchWithFilter<T>(collection: Collection, obj: Partial<T>, filter: FilterQuery<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
     if (toBson) {
-    obj = toBson(obj);
+    obj = toBson(obj as any);
   }
   return new Promise<number>(((resolve, reject) => {
     collection.findOneAndUpdate(filter, { $set: obj }, (err, result: FindAndModifyWriteOpResultObject<T>) => {
@@ -197,7 +197,7 @@ export function patchWithFilter<T>(collection: Collection, obj: T, filter: Filte
         reject(err);
       } else {
         if (toBson && fromBson) {
-          fromBson(obj);
+          fromBson(obj as any);
         }
         resolve(getAffectedRow(result));
       }
