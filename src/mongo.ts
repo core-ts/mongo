@@ -1,4 +1,4 @@
-import { AnyBulkWriteOperation, Collection, Db, Document, Filter, FindOneAndUpdateOptions, MatchKeysAndValues, ModifyResult, MongoClient, MongoClientOptions, PullOperator, PushOperator, Sort, UpdateFilter } from 'mongodb';
+import { AnyBulkWriteOperation, Collection, Db, Document, Filter, FindOneAndUpdateOptions, MatchKeysAndValues, ModifyResult, MongoClient, MongoClientOptions, OptionalId, PullOperator, PushOperator, Sort, UpdateFilter } from 'mongodb';
 
 export interface MongoConfig {
   uri: string;
@@ -108,21 +108,21 @@ export function find<T>(collection: Collection,
   return cursor.toArray().then(items => items as any);
 }
 
-export function insert<T>(collection: Collection, obj: T, id?: string, handleDuplicate?: boolean, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
-  obj = revertOne(obj, id);
+export function insert<T>(collection: Collection, obj0: T, id?: string, handleDuplicate?: boolean, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+  let obj: any = revertOne(obj0, id);
   if (toBson) {
-    obj = toBson(obj);
+    obj = toBson(obj as any);
   }
   return collection.insertOne(obj).then(value => {
     mapOne(obj, id);
     if (toBson && fromBson) {
-      fromBson(obj);
+      fromBson(obj as any);
     }
     return value.acknowledged ? 1 : 0;
   }).catch(err => {
     mapOne(obj, id);
     if (toBson && fromBson) {
-      fromBson(obj);
+      fromBson(obj as any);
     }
     if (handleDuplicate && err && (err as any).errmsg) {
       if ((err as any).errmsg.indexOf('duplicate key error collection:') >= 0) {
@@ -266,6 +266,7 @@ export function updateMany<T>(collection: Collection, filter: FilterQuery<T>, up
 }
 */
 export function updateMany<T>(collection: Collection, objects: T[], id?: string): Promise<number> {
+  // tslint:disable-next-line:array-type
   const operations: AnyBulkWriteOperation<Document>[] = [];
   revertArray(objects, id);
   for (const object of objects) {
@@ -300,7 +301,7 @@ export function upsert<T>(collection: Collection, object: T, id?: string, toBson
       return getAffectedRow(res);
     });
   } else {
-    return collection.insertOne(object).then(r => {
+    return collection.insertOne(object as any).then(r => {
       const v = r['insertedId'];
       if (v && id && id.length > 0) {
         (object as any)[id] = v;
@@ -325,6 +326,7 @@ export function upsertWithFilter<T>(collection: Collection, obj: T, filter: Filt
   });
 }
 export function upsertMany<T>(collection: Collection, objects: T[], id?: string): Promise<number> {
+  // tslint:disable-next-line:array-type
   const operations: AnyBulkWriteOperation<Document>[] = [];
   revertArray(objects, id);
   for (const object of objects) {
@@ -361,6 +363,7 @@ export function deleteByIds(collection: Collection, _ids: any[]): Promise<number
   if (!_ids || _ids.length === 0) {
     return Promise.resolve(0);
   }
+  // tslint:disable-next-line:array-type
   const operations: AnyBulkWriteOperation<Document>[] = [{
     deleteMany: {
       filter: {
@@ -388,16 +391,17 @@ export function findWithAggregate<T>(collection: Collection, pipeline: Document[
   const res = collection.aggregate(pipeline);
   return res.toArray() as any;
 }
-export function revertOne(obj: any, idName?: string): any {
+export function revertOne(obj: any, idName?: string): OptionalId<Document> {
   if (idName && idName.length > 0) {
     obj['_id'] = obj[idName];
     delete obj[idName];
   }
-  return obj;
+  return obj as any;
 }
-export function revertArray<T>(objs: T[], id?: string): T[] {
+// tslint:disable-next-line:array-type
+export function revertArray<T>(objs: T[], id?: string): OptionalId<Document>[] {
   if (!objs || !id) {
-    return objs;
+    return objs as any;
   }
   if (id && id.length > 0) {
     const length = objs.length;
@@ -407,7 +411,7 @@ export function revertArray<T>(objs: T[], id?: string): T[] {
       delete obj[id];
     }
   }
-  return objs;
+  return objs as any;
 }
 export function mapOne(obj: any, id?: string, m?: StringMap): any {
   if (!obj || !id) {
@@ -425,7 +429,7 @@ export function mapOne(obj: any, id?: string, m?: StringMap): any {
 }
 export function _mapOne<T>(obj: T, m: StringMap): any {
   const obj2: any = {};
-  const keys = Object.keys(obj);
+  const keys = Object.keys(obj as any);
   for (const key of keys) {
     let k0 = m[key];
     if (!k0) {
@@ -439,12 +443,12 @@ export function map<T>(obj: T, m?: StringMap): any {
   if (!m) {
     return obj;
   }
-  const mkeys = Object.keys(m);
+  const mkeys = Object.keys(m as any);
   if (mkeys.length === 0) {
     return obj;
   }
   const obj2: any = {};
-  const keys = Object.keys(obj);
+  const keys = Object.keys(obj as any);
   for (const key of keys) {
     let k0 = m[key];
     if (!k0) {
@@ -467,7 +471,7 @@ export function mapArray<T>(results: T[], m?: StringMap): T[] {
   for (let i = 0; i < length; i++) {
     const obj = results[i];
     const obj2: any = {};
-    const keys = Object.keys(obj);
+    const keys = Object.keys(obj as any);
     for (const key of keys) {
       let k0 = m[key];
       if (!k0) {
