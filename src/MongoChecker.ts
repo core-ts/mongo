@@ -20,16 +20,7 @@ export class MongoChecker implements HealthChecker {
     this.build = this.build.bind(this);
   }
   check(): Promise<AnyMap> {
-    const obj = {} as AnyMap;
-    const promise = new Promise<any>((resolve, reject) => {
-      this.db.command({ping: 1}, ((err, value: any) => {
-        if (err || !value) {
-          return reject(err);
-        } else {
-          resolve(obj);
-        }
-      }));
-    });
+    const promise = this.db.command({ping: 1});
     if (this.timeout > 0) {
       return promiseTimeOut(this.timeout, promise);
     } else {

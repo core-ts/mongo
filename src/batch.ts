@@ -1,5 +1,5 @@
-import {Collection} from 'mongodb';
-import {insertMany, updateMany, upsertMany} from './mongo';
+import { Collection } from 'mongodb';
+import { insertMany, updateMany, upsertMany } from './mongo';
 
 export class MongoBatchInserter<T> {
   constructor(protected collection: Collection, protected id?: string, protected map?: (v: T) => T) {

@@ -1,4 +1,4 @@
-import {Collection, FilterQuery, SortOptionObject} from 'mongodb';
+import {Collection, Filter, Sort} from 'mongodb';
 import {Attributes} from './metadata';
 import {buildProject, count, find, mapArray, StringMap} from './mongo';
 
@@ -7,7 +7,7 @@ export interface SearchResult<T> {
   total?: number;
   last?: boolean;
 }
-export function buildSearchResult<T>(collection: Collection, query: FilterQuery<T>, sort?: SortOptionObject<T>, limit?: number, skipOrRef?: number|string, fields?: string[], idName?: string, map?: StringMap, mp?: (v: T) => T): Promise<SearchResult<T>> {
+export function buildSearchResult<T>(collection: Collection, query: Filter<T>, sort?: Sort|string, limit?: number, skipOrRef?: number|string, fields?: string[], idName?: string, map?: StringMap, mp?: (v: T) => T): Promise<SearchResult<T>> {
   const project = buildProject(fields);
   if (limit) {
     let skip = 0;
@@ -53,7 +53,7 @@ export function buildSearchResult<T>(collection: Collection, query: FilterQuery<
     });
   }
 }
-export function buildSort<T>(sort: string, map?: Attributes|StringMap): SortOptionObject<T> {
+export function buildSort<T>(sort: string, map?: Attributes|StringMap): Sort {
   const sort2: any = {};
   if (sort && sort.length > 0) {
     const sorts = sort.split(',');

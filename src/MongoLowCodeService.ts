@@ -1,4 +1,4 @@
-import {Db, FilterQuery, SortOptionObject} from 'mongodb';
+import {Db, Filter, Sort} from 'mongodb';
 import {Attributes, getCollectionName, Model} from './metadata';
 import {PointMapper, StringMap} from './mongo';
 import {MongoWriter} from './MongoWriter';
@@ -7,9 +7,9 @@ import {buildSearchResult, buildSort, SearchResult} from './search';
 
 export class MongoLowCodeService<T, ID, S> extends MongoWriter<T, ID> {
   sort: string;
-  buildQuery: (s: S, m?: Attributes) => FilterQuery<T>;
-  buildSort: (s: string, m?: Attributes|StringMap) => SortOptionObject<T>;
-  constructor(public db: Db, public model: Model, buildQ?: (s: S, m?: Attributes) => FilterQuery<T>, buildOrder?: (s: string, m?: Attributes|StringMap) => SortOptionObject<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T) {
+  buildQuery: (s: S, m?: Attributes) => Filter<T>;
+  buildSort: (s: string, m?: Attributes|StringMap) => Sort;
+  constructor(public db: Db, public model: Model, buildQ?: (s: S, m?: Attributes) => Filter<T>, buildOrder?: (s: string, m?: Attributes|StringMap) => Sort, toBson?: (v: T) => T, fromBson?: (v: T) => T) {
     super(db, getCollectionName(model), model.attributes);
     this.sort = (model.sort && model.sort.length > 0 ? model.sort : 'sort');
     this.buildQuery = (buildQ ? buildQ : buildQuery);

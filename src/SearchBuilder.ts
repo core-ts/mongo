@@ -1,4 +1,4 @@
-import {Collection, Db, FilterQuery, SortOptionObject} from 'mongodb';
+import {Collection, Db, Filter, Sort} from 'mongodb';
 import {Attributes, build} from './metadata';
 import {StringMap} from './mongo';
 import {buildSearchResult, buildSort as bs, SearchResult} from './search';
@@ -10,15 +10,15 @@ export class SearchBuilder<T, S> {
   collection: Collection;
   q?: string;
   excluding?: string;
-  buildSort: (s: string, m?: Attributes|StringMap) => SortOptionObject<T>;
+  buildSort: (s: string, m?: Attributes|StringMap) => Sort;
   constructor(db: Db, collectionName: string,
-    public buildQuery: (s: S, m?: Attributes, q?: string, ex?: string) => FilterQuery<T>,
+    public buildQuery: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<T>,
     metadata: Attributes|string,
     public toBson?: (v: T) => T,
     public sort?: string,
     q?: string,
     excluding?: string,
-    buildSort?: (s: string, m?: Attributes|StringMap) => SortOptionObject<T>) {
+    buildSort?: (s: string, m?: Attributes|StringMap) => Sort) {
       if (metadata) {
         if (typeof metadata === 'string') {
           this.id = metadata;

@@ -1,7 +1,7 @@
-import {FilterQuery} from 'mongodb';
+import {Filter} from 'mongodb';
 import {Attribute, Attributes} from './metadata';
 
-export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcluding?: string): FilterQuery<T> {
+export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcluding?: string): Filter<T> {
   const a: any = {};
   const b: any = {};
   const s: any = s0;

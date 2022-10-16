@@ -1,6 +1,6 @@
 {
   "name": "mongodb-extension",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "mongodb",
   "main": "./lib/index.js",
   "types": "./src/index.ts",
@@ -9,10 +9,9 @@
     "clean:lib": "rimraf lib"
   },
   "dependencies": {
-    "mongodb": "^3.6.9"
+    "mongodb": "^4.10.0"
   },
   "devDependencies": {
-    "@types/mongodb": "^3.6.18",
     "tslint": "5.10.0",
     "typescript": "^3.8.3"
   },
@@ -24,6 +23,7 @@
     "url": "git@github.com/core-ts/mongo"
   },
   "keywords": [
+    "mongo",
     "mongodb"
   ]
 }
