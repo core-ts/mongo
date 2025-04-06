@@ -1,4 +1,4 @@
-import { Collection, Filter, Sort } from "mongodb"
+import { Collection, Document, Filter, Sort } from "mongodb"
 import { Attributes } from "./metadata"
 import { buildProject, count, find, mapArray, StringMap } from "./mongo"
 
@@ -9,7 +9,7 @@ export interface SearchResult<T> {
 }
 export function buildSearchResult<T>(
   collection: Collection,
-  query: Filter<T>,
+  query: Filter<Document>,
   sort?: Sort | string,
   limit?: number,
   skipOrRef?: number | string,
@@ -24,7 +24,7 @@ export function buildSearchResult<T>(
     if (skipOrRef && typeof skipOrRef === "number" && skipOrRef >= 0) {
       skip = skipOrRef
     }
-    const p1 = find(collection, query, sort, limit, skip, project)
+    const p1 = find<T>(collection, query, sort, limit, skip, project)
     const p2 = count(collection, query)
     return Promise.all([p1, p2]).then((values) => {
       const [list2, total] = values
@@ -45,7 +45,7 @@ export function buildSearchResult<T>(
       return r
     })
   } else {
-    return find(collection, query, sort, undefined, undefined, project).then((list) => {
+    return find<T>(collection, query, sort, undefined, undefined, project).then((list) => {
       if (idName && idName !== "") {
         for (const obj of list) {
           ;(obj as any)[idName] = (obj as any)["_id"]

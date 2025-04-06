@@ -60,7 +60,7 @@ export class MongoLoader<T, ID> {
     })
   }
   exist(id: ID): Promise<boolean> {
-    const query = { _id: this.idObjectId ? new ObjectId("" + id) : "" + id }
+    const query: any = { _id: this.idObjectId ? new ObjectId("" + id) : "" + id }
     return count(this.collection, query).then((c) => c > 0)
   }
 }

@@ -1,4 +1,4 @@
-import { Db, Filter, Sort } from "mongodb"
+import { Db, Document, Filter, Sort } from "mongodb"
 import { Attributes, getCollectionName, Model } from "./metadata"
 import { PointMapper, StringMap } from "./mongo"
 import { MongoWriter } from "./MongoWriter"
@@ -7,12 +7,12 @@ import { buildSearchResult, buildSort, SearchResult } from "./search"
 
 export class MongoLowCodeService<T, ID, S> extends MongoWriter<T, ID> {
   sort: string
-  buildQuery: (s: S, m?: Attributes) => Filter<T>
+  buildQuery: (s: S, m?: Attributes) => Filter<Document>
   buildSort: (s: string, m?: Attributes | StringMap) => Sort
   constructor(
     public db: Db,
     public model: Model,
-    buildQ?: (s: S, m?: Attributes) => Filter<T>,
+    buildQ?: (s: S, m?: Attributes) => Filter<Document>,
     buildOrder?: (s: string, m?: Attributes | StringMap) => Sort,
     toBson?: (v: T) => T,
     fromBson?: (v: T) => T,

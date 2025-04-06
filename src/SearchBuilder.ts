@@ -1,4 +1,4 @@
-import { Collection, Db, Filter, Sort } from "mongodb"
+import { Collection, Db, Document, Filter, Sort } from "mongodb"
 import { Attributes, build } from "./metadata"
 import { StringMap } from "./mongo"
 import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
@@ -14,7 +14,7 @@ export class SearchBuilder<T, S> {
   constructor(
     db: Db,
     collectionName: string,
-    public buildQuery: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<T>,
+    public buildQuery: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<Document>,
     metadata: Attributes | string,
     public toBson?: (v: T) => T,
     public sort?: string,

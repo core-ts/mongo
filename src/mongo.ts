@@ -6,7 +6,6 @@ import {
   Filter,
   FindOneAndUpdateOptions,
   MatchKeysAndValues,
-  ModifyResult,
   MongoClient,
   MongoClientOptions,
   OptionalId,
@@ -14,6 +13,7 @@ import {
   PushOperator,
   Sort,
   UpdateFilter,
+  WithId,
 } from "mongodb"
 
 export interface MongoConfig {
@@ -40,10 +40,10 @@ export function connect(uri: string, options: MongoClientOptions): Promise<Mongo
       throw err
     })
 }
-export function findOne<T>(collection: Collection, query: Filter<T>, idName?: string, m?: StringMap): Promise<T> {
+export function findOne<T>(collection: Collection, query: Filter<Document>, idName?: string, m?: StringMap): Promise<T> {
   return _findOne<T>(collection, query).then((obj) => mapOne(obj, idName, m))
 }
-function _findOne<T>(collection: Collection, query: Filter<T>): Promise<T> {
+function _findOne<T>(collection: Collection, query: Filter<Document>): Promise<T> {
   return collection.findOne(query).then((item) => item as any)
 }
 export function getFields(fields: string[], all?: string[]): string[] | undefined {
@@ -84,12 +84,19 @@ export function valueOf<T>(collection: Collection, field: string, values: T[], n
     return r
   })
 }
-export function findAllWithMap<T>(collection: Collection, query: Filter<T>, id?: string, m?: StringMap, sort?: Sort | string, project?: any): Promise<T[]> {
+export function findAllWithMap<T>(
+  collection: Collection,
+  query: Filter<Document>,
+  id?: string,
+  m?: StringMap,
+  sort?: Sort | string,
+  project?: any,
+): Promise<T[]> {
   return findWithMap(collection, query, id, m, sort, undefined, undefined, project)
 }
 export function findWithMap<T>(
   collection: Collection,
-  query: Filter<T>,
+  query: Filter<Document>,
   id?: string,
   m?: StringMap,
   sort?: Sort,
@@ -111,10 +118,17 @@ export function findWithMap<T>(
     }
   })
 }
-export function findAll<T>(collection: Collection, query: Filter<T>, sort?: Sort | string, project?: Document): Promise<T[]> {
+export function findAll<T>(collection: Collection, query: Filter<Document>, sort?: Sort | string, project?: Document): Promise<T[]> {
   return find<T>(collection, query, sort, undefined, undefined, project)
 }
-export function find<T>(collection: Collection, query: Filter<T>, sort?: Sort | string, limit?: number, skip?: number, project?: Document): Promise<T[]> {
+export function find<T>(
+  collection: Collection,
+  query: Filter<Document>,
+  sort?: Sort | string,
+  limit?: number,
+  skip?: number,
+  project?: Document,
+): Promise<T[]> {
   let cursor = collection.find(query)
   if (sort) {
     cursor = cursor.sort(sort)
@@ -215,14 +229,23 @@ export function patch<T>(collection: Collection, obj: Partial<T>, id?: string, t
     return getAffectedRow(res)
   })
 }
-export function getAffectedRow<T>(res: ModifyResult<T>): number {
+export function getAffectedRow<T>(res: WithId<Document> | null): number {
+  if (!res) {
+    return 0
+  }
   if (res.lastErrorObject) {
     return res.lastErrorObject.n
   } else {
     return res.ok
   }
 }
-export function patchWithFilter<T>(collection: Collection, obj: Partial<T>, filter: Filter<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+export function patchWithFilter<T>(
+  collection: Collection,
+  obj: Partial<T>,
+  filter: Filter<Document>,
+  toBson?: (v: T) => T,
+  fromBson?: (v: T) => T,
+): Promise<number> {
   if (toBson) {
     obj = toBson(obj as any)
   }
@@ -249,7 +272,7 @@ export function update<T>(collection: Collection, obj: T, id?: string, toBson?: 
     return getAffectedRow(res)
   })
 }
-export function updateWithFilter<T>(collection: Collection, obj: T, filter: Filter<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+export function updateWithFilter<T>(collection: Collection, obj: T, filter: Filter<Document>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   if (toBson) {
     obj = toBson(obj)
   }
@@ -276,6 +299,9 @@ export function updateFields<T>(
     obj = toBson(obj)
   }
   return collection.findOneAndUpdate({ _id: obj["_id"] }, { $push: arr }).then((res) => {
+    if (!res) {
+      return 0
+    }
     if (res.value) {
       if (fromBson) {
         return fromBson(res.value as any)
@@ -287,8 +313,11 @@ export function updateFields<T>(
     }
   })
 }
-export function updateByQuery<T>(collection: Collection, query: Filter<T>, setValue: MatchKeysAndValues<T>): Promise<T> {
+export function updateByQuery<T>(collection: Collection, query: Filter<Document>, setValue: MatchKeysAndValues<T>): Promise<T> {
   return collection.findOneAndUpdate(query, { $set: setValue }).then((res) => {
+    if (!res) {
+      return 0
+    }
     if (res.value) {
       return res.value as any
     } else {
@@ -356,7 +385,7 @@ export function upsert<T>(collection: Collection, object: T, id?: string, toBson
     })
   }
 }
-export function upsertWithFilter<T>(collection: Collection, obj: T, filter: Filter<T>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
+export function upsertWithFilter<T>(collection: Collection, obj: T, filter: Filter<Document>, toBson?: (v: T) => T, fromBson?: (v: T) => T): Promise<number> {
   if (toBson) {
     obj = toBson(obj)
   }
@@ -393,10 +422,10 @@ export function upsertMany<T>(collection: Collection, objects: T[], id?: string)
     return res.insertedCount + res.modifiedCount + res.upsertedCount
   })
 }
-export function deleteMany<T>(collection: Collection, query: Filter<T>): Promise<number> {
+export function deleteMany<T>(collection: Collection, query: Filter<Document>): Promise<number> {
   return collection.deleteMany(query).then((res) => res.deletedCount)
 }
-export function deleteOne<T>(collection: Collection, query: Filter<T>): Promise<number> {
+export function deleteOne<T>(collection: Collection, query: Filter<Document>): Promise<number> {
   return collection.deleteOne(query).then((res) => res.deletedCount)
 }
 export function deleteById(collection: Collection, _id: any): Promise<number> {
@@ -426,9 +455,14 @@ export function deleteFields<T>(collection: Collection, object: T, filter: PullO
     throw new Error("Cannot delete an object that do not have _id field: " + JSON.stringify(obj))
   }
   const ft: UpdateFilter<Document> = { $pull: filter }
-  return collection.findOneAndUpdate({ _id: obj["_id"] }, ft).then((res) => res.ok)
+  return collection.findOneAndUpdate({ _id: obj["_id"] }, ft).then((res) => {
+    if (!res) {
+      return 0
+    }
+    return res.ok
+  })
 }
-export function count<T>(collection: Collection, query: Filter<T>): Promise<number> {
+export function count<T>(collection: Collection, query: Filter<Document>): Promise<number> {
   return collection.countDocuments(query)
 }
 export function findWithAggregate<T>(collection: Collection, pipeline: Document[]): Promise<T[]> {
