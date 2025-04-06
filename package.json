@@ -1,6 +1,6 @@
 {
   "name": "mongodb-extension",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "mongodb",
   "main": "./lib/index.js",
   "types": "./src/index.ts",

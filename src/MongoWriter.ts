@@ -10,13 +10,13 @@ export class MongoWriter<T, ID> extends MongoLoader<T, ID> {
     if (typeof attributes !== "string") {
       this.version = getVersion(attributes)
     }
-    this.insert = this.insert.bind(this)
+    this.create = this.create.bind(this)
     this.update = this.update.bind(this)
     this.patch = this.patch.bind(this)
     this.save = this.save.bind(this)
     this.delete = this.delete.bind(this)
   }
-  insert(obj: T): Promise<number> {
+  create(obj: T): Promise<number> {
     if (this.version && this.version.length > 0) {
       ;(obj as any)[this.version] = 1
     }
