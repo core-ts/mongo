@@ -1,13 +1,13 @@
-import {Collection, Db} from 'mongodb';
-import {valueOf} from './mongo';
+import { Collection, Db } from "mongodb"
+import { valueOf } from "./mongo"
 
 export class FieldLoader {
-  collection: Collection;
+  collection: Collection
   constructor(db: Db, collectionName: string, public field: string) {
-    this.collection = db.collection(collectionName);
-    this.values = this.values.bind(this);
+    this.collection = db.collection(collectionName)
+    this.values = this.values.bind(this)
   }
   values(ids: string[]): Promise<string[]> {
-    return valueOf<string>(this.collection, this.field, ids);
+    return valueOf<string>(this.collection, this.field, ids)
   }
 }

@@ -1,42 +1,46 @@
-import {MongoLoader} from './MongoLoader';
-import {MongoSearchWriter} from './MongoSearchWriter';
-import {MongoWriter} from './MongoWriter';
+import { MongoLoader } from "./MongoLoader"
+import { MongoSearchWriter } from "./MongoSearchWriter"
+import { MongoWriter } from "./MongoWriter"
 
-import {MongoLowCodeService} from './MongoLowCodeService';
-export {MongoLowCodeService as MongoLowCodeRepository};
-export * from './MongoLowCodeService';
+import { MongoLowCodeService } from "./MongoLowCodeService"
+export * from "./MongoLowCodeService"
+export { MongoLowCodeService as MongoLowCodeRepository }
 
-export {MongoLoader as MongoLoadRepository};
-export {MongoLoader as MongoLoadService};
-export {MongoLoader as MongoViewRepository};
-export {MongoLoader as MongoViewService};
-export {MongoLoader as LoadService};
-export {MongoLoader as LoadRepository};
-export {MongoLoader as ViewService};
-export {MongoLoader as ViewRepository};
-export {MongoWriter as MongoGenericRepository};
-export {MongoWriter as MongoGenericService};
-export {MongoWriter as GenericRepository};
-export {MongoWriter as GenericService};
-export {MongoWriter as Repository};
+export {
+  MongoWriter as GenericRepository,
+  MongoWriter as GenericService,
+  MongoLoader as LoadRepository,
+  MongoLoader as LoadService,
+  MongoWriter as MongoGenericRepository,
+  MongoWriter as MongoGenericService,
+  MongoLoader as MongoLoadRepository,
+  MongoLoader as MongoLoadService,
+  MongoLoader as MongoViewRepository,
+  MongoLoader as MongoViewService,
+  MongoWriter as Repository,
+  MongoLoader as ViewRepository,
+  MongoLoader as ViewService,
+}
 
-export {MongoSearchWriter as GenericSearchService};
-export {MongoSearchWriter as GenericSearchRepository};
-export {MongoSearchWriter as MongoGenericSearchService};
-export {MongoSearchWriter as MongoGenericSearchRepository};
-export {MongoSearchWriter as MongoRepository};
-export {MongoSearchWriter as MongoService};
-export {MongoSearchWriter as Service};
+export {
+  MongoSearchWriter as GenericSearchRepository,
+  MongoSearchWriter as GenericSearchService,
+  MongoSearchWriter as MongoGenericSearchRepository,
+  MongoSearchWriter as MongoGenericSearchService,
+  MongoSearchWriter as MongoRepository,
+  MongoSearchWriter as MongoService,
+  MongoSearchWriter as Service,
+}
 
-export * from './metadata';
-export * from './MongoChecker';
-export * from './mongo';
-export * from './FieldLoader';
-export * from './MongoLoader';
-export * from './MongoWriter';
-export * from './search';
-export * from './query';
-export * from './SearchBuilder';
-export * from './one';
-export * from './batch';
-export * from './AuditLogWriter';
+export * from "./AuditLogWriter"
+export * from "./batch"
+export * from "./FieldLoader"
+export * from "./metadata"
+export * from "./mongo"
+export * from "./MongoChecker"
+export * from "./MongoLoader"
+export * from "./MongoWriter"
+export * from "./one"
+export * from "./query"
+export * from "./search"
+export * from "./SearchBuilder"
