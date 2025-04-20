@@ -38,16 +38,16 @@ export class SearchBuilder<T, S> {
     this.excluding = excluding && excluding.length > 0 ? excluding : "excluding"
     this.search = this.search.bind(this)
   }
-  search(s: S, limit: number, page?: number, fields?: string[]): Promise<SearchResult<T>> {
+  search(filter: S, limit: number, page?: number | string, fields?: string[]): Promise<SearchResult<T>> {
     let offset = 0
-    if (page && page >= 1) {
+    if (typeof page === "number" && page >= 1) {
       offset = getOffset(limit, page)
     }
     const st = this.sort ? this.sort : "sort"
-    const sn = (s as any)[st] as string
+    const sn = (filter as any)[st] as string
     const so = this.buildSort(sn, this.attributes)
-    delete (s as any)[st]
-    const query = this.buildQuery(s, this.attributes, this.q, this.excluding)
+    delete (filter as any)[st]
+    const query = this.buildQuery(filter, this.attributes, this.q, this.excluding)
     return buildSearchResult<T>(this.collection, query, so, limit, page, fields, this.id, this.map, this.toBson)
   }
 }
