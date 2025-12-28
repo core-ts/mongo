@@ -1,10 +1,10 @@
 import { Db, Document, Filter, Sort } from "mongodb"
 import { Attributes } from "./metadata"
-import { MongoWriter } from "./MongoWriter"
-import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
 import { StringMap } from "./mongo"
-import { getOffset } from "./SearchBuilder"
+import { MongoWriter } from "./MongoWriter"
 import { buildQuery as buildQ } from "./query"
+import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
+import { getOffset } from "./SearchBuilder"
 
 export class MongoSearchWriter<T, ID, S> extends MongoWriter<T, ID> {
   constructor(
@@ -28,7 +28,7 @@ export class Repository<T, ID, S> extends MongoWriter<T, ID> {
   excluding?: string
   buildSort: (s: string, m?: Attributes | StringMap) => Sort
   protected buildQuery: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<Document>
-  protected deleteSort?: boolean
+  // protected deleteSort?: boolean
   constructor(
     db: Db,
     collectionName: string,
@@ -42,7 +42,7 @@ export class Repository<T, ID, S> extends MongoWriter<T, ID> {
     buildSort?: (s: string, m?: Attributes | StringMap) => Sort,
   ) {
     super(db, collectionName, attributes, toBson, fromBson)
-    this.deleteSort = buildQuery ? undefined : true
+    // this.deleteSort = buildQuery ? undefined : true
     this.buildQuery = buildQuery ? buildQuery : buildQ
     this.buildSort = buildSort ? buildSort : bs
     this.q = q && q.length > 0 ? q : "q"
@@ -57,9 +57,6 @@ export class Repository<T, ID, S> extends MongoWriter<T, ID> {
     const st = this.sort ? this.sort : "sort"
     const sn = (filter as any)[st] as string
     const so = this.buildSort(sn, this.attributes)
-    if (this.deleteSort) {
-      delete (filter as any)[st]
-    }
     const query = this.buildQuery(filter, this.attributes, this.q, this.excluding)
     return buildSearchResult<T>(this.collection, query, so, limit, page, fields, this.id, this.map, this.toBson)
   }

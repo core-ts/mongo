@@ -114,8 +114,6 @@ export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcl
               }
             }
           }
-        } else if (typeof v === "string" && v.length > 0) {
-          a[field] = buildMatch(v, "")
         }
       } else if (typeof v === "string" && v.length > 0) {
         a[field] = buildMatch(v, "")

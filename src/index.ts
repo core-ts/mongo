@@ -1,5 +1,5 @@
 import { MongoLoader } from "./MongoLoader"
-import { Repository, MongoSearchWriter } from "./MongoSearchWriter"
+import { MongoSearchWriter, Repository } from "./MongoSearchWriter"
 import { MongoWriter } from "./MongoWriter"
 import { SearchBuilder } from "./SearchBuilder"
 
@@ -9,11 +9,8 @@ export * from "./MongoSearchWriter"
 export { MongoLowCodeService as MongoLowCodeRepository }
 
 export {
-  SearchBuilder as SearchRepository,
-  SearchBuilder as MongoSearchRepository,
-  MongoWriter as GenericRepository,
   MongoWriter as CRUDRepository,
-  Repository as MongoRepository,
+  MongoWriter as GenericRepository,
   MongoWriter as GenericService,
   MongoLoader as LoadRepository,
   MongoLoader as LoadService,
@@ -21,8 +18,11 @@ export {
   MongoWriter as MongoGenericService,
   MongoLoader as MongoLoadRepository,
   MongoLoader as MongoLoadService,
+  Repository as MongoRepository,
+  SearchBuilder as MongoSearchRepository,
   MongoLoader as MongoViewRepository,
   MongoLoader as MongoViewService,
+  SearchBuilder as SearchRepository,
   MongoLoader as ViewRepository,
   MongoLoader as ViewService,
 }

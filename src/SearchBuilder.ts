@@ -1,8 +1,8 @@
 import { Collection, Db, Document, Filter, Sort } from "mongodb"
 import { Attributes, build } from "./metadata"
 import { StringMap } from "./mongo"
-import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
 import { buildQuery as buildQ } from "./query"
+import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
 
 export class SearchBuilder<T, S> {
   attrs?: Attributes
@@ -13,7 +13,7 @@ export class SearchBuilder<T, S> {
   excluding?: string
   buildSort: (s: string, m?: Attributes | StringMap) => Sort
   protected buildQuery: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<Document>
-  protected deleteSort?: boolean
+  // protected deleteSort?: boolean
   constructor(
     db: Db,
     collectionName: string,
@@ -35,7 +35,7 @@ export class SearchBuilder<T, S> {
         this.map = meta.map
       }
     }
-    this.deleteSort = buildQuery ? undefined : true
+    // this.deleteSort = buildQuery ? undefined : true
     this.buildQuery = buildQuery ? buildQuery : buildQ
     this.collection = db.collection(collectionName)
     this.buildSort = buildSort ? buildSort : bs
@@ -51,9 +51,6 @@ export class SearchBuilder<T, S> {
     const st = this.sort ? this.sort : "sort"
     const sn = (filter as any)[st] as string
     const so = this.buildSort(sn, this.attrs)
-    if (this.deleteSort) {
-      delete (filter as any)[st]
-    }
     const query = this.buildQuery(filter, this.attrs, this.q, this.excluding)
     return buildSearchResult<T>(this.collection, query, so, limit, page, fields, this.id, this.map, this.toBson)
   }
