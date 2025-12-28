@@ -5,7 +5,6 @@ import { buildProject, count, find, mapArray, StringMap } from "./mongo"
 export interface SearchResult<T> {
   list: T[]
   total?: number
-  last?: boolean
 }
 export function buildSearchResult<T>(
   collection: Collection,
@@ -41,7 +40,7 @@ export function buildSearchResult<T>(
       if (mp) {
         list = list.map((o) => mp(o))
       }
-      const r: SearchResult<T> = { list, total, last: skip + list.length >= total }
+      const r: SearchResult<T> = { list, total }
       return r
     })
   } else {
