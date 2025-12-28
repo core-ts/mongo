@@ -5,6 +5,7 @@ import { SearchBuilder } from "./SearchBuilder"
 
 import { MongoLowCodeService } from "./MongoLowCodeService"
 export * from "./MongoLowCodeService"
+export * from "./MongoSearchWriter"
 export { MongoLowCodeService as MongoLowCodeRepository }
 
 export {

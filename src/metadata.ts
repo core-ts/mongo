@@ -27,7 +27,6 @@ export type DataType =
   | "dates"
   | "datetimes"
   | "times"
-export type FormatType = "currency" | "percentage" | "email" | "url" | "phone" | "fax" | "ipv4" | "ipv6"
 export type Operator = "=" | "like" | "!=" | "<>" | ">" | ">=" | "<" | "<="
 
 export interface Model {
@@ -44,34 +43,11 @@ export interface Model {
 export interface Attribute {
   name?: string
   field?: string
-  column?: string
   type?: DataType
-  format?: FormatType
-  required?: boolean
   operator?: Operator
-  default?: string | number | Date | boolean
   key?: boolean
-  unique?: boolean
-  enum?: string[] | number[]
   q?: boolean
-  noinsert?: boolean
-  noupdate?: boolean
-  nopatch?: boolean
   version?: boolean
-  length?: number
-  min?: number
-  max?: number
-  gt?: number
-  lt?: number
-  precision?: number
-  scale?: number
-  exp?: RegExp | string
-  code?: string
-  noformat?: boolean
-  ignored?: boolean
-  jsonField?: string
-  link?: string
-  typeof?: Attributes
 }
 export interface Attributes {
   [key: string]: Attribute
