@@ -41,20 +41,28 @@ export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcl
             if (attr.q) {
               ex.push(key)
             }
-            const exg = buildMatch(v, attr.match)
+            const exg = buildMatch(v, attr.operator)
             a[field] = exg
           } else if (v instanceof Date) {
-            if (attr.match === "max") {
-              b["$lte"] = v
-            } else {
+            if (attr.operator === ">=") {
               b["$gte"] = v
+            } else if (attr.operator === ">") {
+              b["$gt"] = v
+            } else if (attr.operator === "<") {
+              b["$lt"] = v
+            } else {
+              b["$lte"] = v
             }
             a[field] = b
           } else if (typeof v === "number") {
-            if (attr.match === "max") {
-              b["$lte"] = v
-            } else {
+            if (attr.operator === ">=") {
               b["$gte"] = v
+            } else if (attr.operator === ">") {
+              b["$gt"] = v
+            } else if (attr.operator === "<") {
+              b["$lt"] = v
+            } else {
+              b["$lte"] = v
             }
             a[field] = b
           } else if (attr.type === "ObjectId") {
@@ -123,7 +131,7 @@ export function buildQuery<T, S>(s0: S, attrs?: Attributes, sq?: string, strExcl
     for (const field of qkeys) {
       const attr = attrs[field]
       if (attr.q && (attr.type === undefined || attr.type === "string") && !ex.includes(field)) {
-        c.push(buildQ(field, q, attr.match))
+        c.push(buildQ(field, q, attr.operator))
       }
     }
   }
@@ -142,22 +150,22 @@ export function isEmpty(s: string): boolean {
 }
 export function buildQ(field: string, q: string, match?: string): any {
   const o: any = {}
-  if (match === "equal") {
+  if (match === "=") {
     o[field] = q
-  } else if (match === "prefix") {
-    o[field] = new RegExp(`^${q}`)
-  } else {
+  } else if (match === "like") {
     o[field] = new RegExp(`\\w*${q}\\w*`)
+  } else {
+    o[field] = new RegExp(`^${q}`)
   }
   return o
 }
 export function buildMatch(v: string, match?: string): string | RegExp {
-  if (match === "equal") {
+  if (match === "=") {
     return v
-  } else if (match === "prefix") {
-    return new RegExp(`^${v}`)
-  } else {
+  } else if (match === "like") {
     return new RegExp(`\\w*${v}\\w*`)
+  } else {
+    return new RegExp(`^${v}`)
   }
 }
 export function isDateRange<T>(obj: T): boolean {

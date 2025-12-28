@@ -28,7 +28,7 @@ export type DataType =
   | "datetimes"
   | "times"
 export type FormatType = "currency" | "percentage" | "email" | "url" | "phone" | "fax" | "ipv4" | "ipv6"
-export type MatchType = "equal" | "prefix" | "contain" | "max" | "min" // contain: default for string, min: default for Date, number
+export type Operator = "=" | "like" | "!=" | "<>" | ">" | ">=" | "<" | "<="
 
 export interface Model {
   name?: string
@@ -48,7 +48,7 @@ export interface Attribute {
   type?: DataType
   format?: FormatType
   required?: boolean
-  match?: MatchType
+  operator?: Operator
   default?: string | number | Date | boolean
   key?: boolean
   unique?: boolean
