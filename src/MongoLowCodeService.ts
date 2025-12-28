@@ -10,8 +10,8 @@ export class MongoLowCodeService<T, ID, S> extends MongoWriter<T, ID> {
   buildQuery: (s: S, m?: Attributes) => Filter<Document>
   buildSort: (s: string, m?: Attributes | StringMap) => Sort
   constructor(
-    public db: Db,
-    public model: Model,
+    protected db: Db,
+    protected model: Model,
     buildQ?: (s: S, m?: Attributes) => Filter<Document>,
     buildOrder?: (s: string, m?: Attributes | StringMap) => Sort,
     toBson?: (v: T) => T,
