@@ -1,6 +1,6 @@
 {
   "name": "mongodb-extension",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "mongodb",
   "main": "./lib/index.js",
   "types": "./src/index.ts",
@@ -9,7 +9,7 @@
     "clean:lib": "rimraf lib"
   },
   "dependencies": {
-    "mongodb": "^6.0.0"
+    "mongodb": "^7.0.0"
   },
   "devDependencies": {
     "tslint": "5.10.0",
