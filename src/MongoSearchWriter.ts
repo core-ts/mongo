@@ -1,29 +1,12 @@
 import { Db, Document, Filter, Sort } from "mongodb"
 import { Attributes } from "./metadata"
 import { StringMap } from "./mongo"
-import { MongoWriter } from "./MongoWriter"
+import { CRUDRepository } from "./MongoWriter"
 import { buildQuery as buildQ } from "./query"
 import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
 import { getOffset } from "./search-repository"
 
-export class MongoSearchWriter<T, ID, S> extends MongoWriter<T, ID> {
-  constructor(
-    protected find: (s: S, limit?: number, offset?: number | string, fields?: string[]) => Promise<SearchResult<T>>,
-    protected db: Db,
-    collectionName: string,
-    attributes: Attributes | string,
-    toBson?: (v: T) => T,
-    fromBson?: (v: T) => T,
-  ) {
-    super(db, collectionName, attributes, toBson, fromBson)
-    this.search = this.search.bind(this)
-  }
-  search(s: S, limit?: number, offset?: number, fields?: string[]): Promise<SearchResult<T>> {
-    return this.find(s, limit, offset, fields)
-  }
-}
-
-export class Repository<T, ID, S> extends MongoWriter<T, ID> {
+export class Repository<T, ID, S> extends CRUDRepository<T, ID> {
   q?: string
   excluding?: string
   buildSort: (s: string, m?: Attributes | StringMap) => Sort

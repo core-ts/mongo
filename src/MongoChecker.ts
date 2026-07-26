@@ -10,44 +10,51 @@ export interface HealthChecker {
 }
 
 export class MongoChecker implements HealthChecker {
-  private timeout: number
-  private service: string
-  constructor(private db: Db, service?: string, timeout?: number) {
-    this.timeout = timeout && timeout > 0 ? timeout : 4200
-    this.service = service && service.length > 0 ? service : "mongo"
-    this.check = this.check.bind(this)
-    this.name = this.name.bind(this)
-    this.build = this.build.bind(this)
+  protected service: string
+  constructor(
+    protected readonly db: Db,
+    service?: string,
+    protected readonly timeout = 4500,
+  ) {
+    this.service = service ? service : "mongodb"
   }
-  check(): Promise<AnyMap> {
-    const promise = this.db.command({ ping: 1 })
-    if (this.timeout > 0) {
-      return promiseTimeOut(this.timeout, promise)
-    } else {
-      return promise
-    }
-  }
+
   name(): string {
     return this.service
   }
-  build(data: AnyMap, err: any): AnyMap {
-    if (err) {
-      if (!data) {
-        data = {} as AnyMap
-      }
-      data["error"] = err
+
+  build(data: AnyMap, error: any): AnyMap {
+    if (error) {
+      data.status = "DOWN"
+      data.error = error.message || String(error)
+    } else {
+      data.status = "UP"
     }
     return data
   }
-}
 
-function promiseTimeOut(timeoutInMilliseconds: number, promise: Promise<any>): Promise<any> {
-  return Promise.race([
-    promise,
-    new Promise((resolve, reject) => {
-      setTimeout(() => {
-        reject(`Timed out in: ${timeoutInMilliseconds} milliseconds!`)
-      }, timeoutInMilliseconds)
-    }),
-  ])
+  async check(): Promise<AnyMap> {
+    const start = Date.now()
+
+    try {
+      await Promise.race([
+        this.db.admin().ping(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("MongoDB health check timeout")), this.timeout)),
+      ])
+
+      return this.build(
+        {
+          responseTime: Date.now() - start,
+        },
+        null,
+      )
+    } catch (err) {
+      return this.build(
+        {
+          responseTime: Date.now() - start,
+        },
+        err,
+      )
+    }
+  }
 }

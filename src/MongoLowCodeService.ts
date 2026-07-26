@@ -1,11 +1,11 @@
 import { Db, Document, Filter, Sort } from "mongodb"
 import { Attributes, getCollectionName, Model } from "./metadata"
 import { PointMapper, StringMap } from "./mongo"
-import { MongoWriter } from "./MongoWriter"
+import { CRUDRepository } from "./MongoWriter"
 import { buildQuery } from "./query"
 import { buildSearchResult, buildSort, SearchResult } from "./search"
 
-export class MongoLowCodeService<T, ID, S> extends MongoWriter<T, ID> {
+export class MongoLowCodeService<T, ID, S> extends CRUDRepository<T, ID> {
   sort: string
   buildQuery: (s: S, m?: Attributes) => Filter<Document>
   buildSort: (s: string, m?: Attributes | StringMap) => Sort
