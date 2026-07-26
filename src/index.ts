@@ -1,11 +1,11 @@
 import { MongoLoader } from "./MongoLoader"
-import { Repository } from "./MongoSearchWriter"
+import { Repository } from "./repository"
 import { CRUDRepository } from "./MongoWriter"
 import { SearchRepository } from "./search-repository"
 
 import { MongoLowCodeService } from "./MongoLowCodeService"
 export * from "./MongoLowCodeService"
-export * from "./MongoSearchWriter"
+export * from "./repository"
 export { MongoLowCodeService as MongoLowCodeRepository }
 
 export {
