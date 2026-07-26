@@ -1,8 +1,8 @@
-# mongodb-extension
+# mongodb-kit
 
 A lightweight, high-performance MongoDB framework for Node.js and TypeScript.
 
-`mongodb-extension` provides a repository abstraction, metadata-driven object mapping, search framework, optimistic locking, batch operations, streaming utilities, and health checks on top of the official MongoDB driver.
+`mongodb-kit` provides a repository abstraction, metadata-driven object mapping, search framework, optimistic locking, batch operations, streaming utilities, and health checks on top of the official MongoDB driver.
 
 It is designed for enterprise applications while remaining simple enough to use directly in small services.
 
@@ -35,18 +35,18 @@ It is designed for enterprise applications while remaining simple enough to use 
 # Installation
 
 ```bash
-npm install mongodb-extension
+npm install mongodb-kit
 ```
 
 or
 
 ```bash
-yarn add mongodb-extension
+yarn add mongodb-kit
 ```
 
 ---
 
-# Why mongodb-extension?
+# Why mongodb-kit?
 
 Most MongoDB projects eventually implement the same infrastructure repeatedly:
 
