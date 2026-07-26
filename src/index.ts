@@ -1,7 +1,7 @@
 import { MongoLoader } from "./MongoLoader"
 import { MongoSearchWriter, Repository } from "./MongoSearchWriter"
 import { MongoWriter } from "./MongoWriter"
-import { SearchBuilder } from "./SearchBuilder"
+import { SearchRepository } from "./search-repository"
 
 import { MongoLowCodeService } from "./MongoLowCodeService"
 export * from "./MongoLowCodeService"
@@ -19,10 +19,10 @@ export {
   MongoLoader as MongoLoadRepository,
   MongoLoader as MongoLoadService,
   Repository as MongoRepository,
-  SearchBuilder as MongoSearchRepository,
+  SearchRepository as MongoSearchRepository,
   MongoLoader as MongoViewRepository,
   MongoLoader as MongoViewService,
-  SearchBuilder as SearchRepository,
+  SearchRepository as SearchRepository,
   MongoLoader as ViewRepository,
   MongoLoader as ViewService,
 }
@@ -47,4 +47,4 @@ export * from "./MongoWriter"
 export * from "./one"
 export * from "./query"
 export * from "./search"
-export * from "./SearchBuilder"
+export * from "./search-repository"

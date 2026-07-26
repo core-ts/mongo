@@ -4,7 +4,7 @@ import { StringMap } from "./mongo"
 import { buildQuery as buildQ } from "./query"
 import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
 
-export class SearchBuilder<T, S> {
+export class SearchRepository<T, S> {
   attrs?: Attributes
   id?: string
   map?: StringMap
@@ -45,6 +45,7 @@ export class SearchBuilder<T, S> {
   }
   search(filter: S, limit: number, page?: number | string, fields?: string[]): Promise<SearchResult<T>> {
     let offset = 0
+
     if (typeof page === "number" && page >= 1) {
       offset = getOffset(limit, page)
     }
@@ -52,7 +53,7 @@ export class SearchBuilder<T, S> {
     const sn = (filter as any)[st] as string
     const so = this.buildSort(sn, this.attrs)
     const query = this.buildQuery(filter, this.attrs, this.q, this.excluding)
-    return buildSearchResult<T>(this.collection, query, so, limit, page, fields, this.id, this.map, this.toBson)
+    return buildSearchResult<T>(this.collection, query, so, limit, offset, fields, this.id, this.map, this.toBson)
   }
 }
 export function getOffset(limit: number, page: number, ifirstPageSize?: number): number {
@@ -64,3 +65,4 @@ export function getOffset(limit: number, page: number, ifirstPageSize?: number):
     return offset < 0 ? 0 : offset
   }
 }
+export const SearchBuilder = SearchRepository
