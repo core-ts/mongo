@@ -73,14 +73,14 @@ export class Query<T, ID, S> extends SearchRepository<T, S> {
     collectionName: string,
     metadata: Attributes | string,
     buildQuery?: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<Document>,
-    toBson?: (v: T) => T,
+    fromBson?: (v: T) => T,
     sort?: string,
     q?: string,
     excluding?: string,
     buildSort?: (s: string, m?: Attributes | StringMap) => Sort,
     idObjectId?: boolean,
   ) {
-    super(db, collectionName, metadata, buildQuery, toBson, sort, q, excluding, buildSort)
+    super(db, collectionName, metadata, buildQuery, fromBson, sort, q, excluding, buildSort)
     this.idObjectId = idObjectId
   }
   metadata(): Attributes | undefined {
