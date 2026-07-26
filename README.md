@@ -46,493 +46,364 @@ yarn add mongodb-kit
 
 ---
 
-# Why mongodb-kit?
+## Quick Start
 
-Most MongoDB projects eventually implement the same infrastructure repeatedly:
+### Define a model
 
-- Repository classes
-- CRUD helpers
-- Search APIs
-- Pagination
-- Sorting
-- Mapping between Mongo documents and models
-- Batch processing
-- Optimistic locking
-- Health checks
-
-This library provides those components out of the box so developers can focus on business logic.
-
----
-
-# Architecture
-
-```
- Application
-      │
-      ▼
- Repository
-      │
-      ▼
-CRUDRepository
-      │
-      ▼
- MongoLoader
-      │
-      ▼
-  mongo.ts
-      │
-      ▼
-MongoDB Driver
+```typescript
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    age: number;
+}
 ```
 
-The framework separates responsibilities into multiple reusable layers.
+---
+
+### Create a repository
+
+```typescript
+import { MongoClient } from "mongodb";
+import { Repository } from "mongo-repository";
+
+const client = await MongoClient.connect(connectionString);
+
+const database = client.db("sample");
+
+const repository = new Repository<User>(
+    database,
+    "users"
+);
+```
 
 ---
 
-# Core Components
+### Create
 
-## mongo.ts
-
-Low-level MongoDB operations.
-
-Provides helper functions for:
-
-- Find
-- Insert
-- Update
-- Patch
-- Delete
-- Bulk operations
-- Projection
-- Mapping
-- Query execution
-
-If you prefer working directly with MongoDB collections, this layer is sufficient.
+```typescript
+await repository.create({
+    id: "u01",
+    name: "John",
+    email: "john@example.com",
+    age: 30
+});
+```
 
 ---
 
-## MongoLoader
+### Find by id
 
-Read-only repository.
-
-Provides methods like:
-
-- load()
-- exist()
-- all()
-- metadata()
-
-Ideal for query-only services.
+```typescript
+const user = await repository.load("u01");
+```
 
 ---
 
-## CRUDRepository
+### Update
 
-Extends MongoLoader and adds:
+```typescript
+await repository.update({
+    id: "u01",
+    name: "John Smith",
+    email: "john@example.com",
+    age: 31
+});
+```
+
+---
+
+### Delete
+
+```typescript
+await repository.delete("u01");
+```
+
+---
+
+## Searching
+
+Define a search model.
+
+```typescript
+export interface UserFilter {
+    name?: string;
+    age?: number;
+    page?: number;
+    size?: number;
+}
+```
+
+Search
+
+```typescript
+const result = await repository.search({
+    name: "John",
+    page: 1,
+    size: 20
+});
+```
+
+---
+
+## Custom Query Builder
+
+The repository allows replacing the default query generation.
+
+```typescript
+const repository = new Repository<User, string, UserFilter>(
+    database,
+    "users",
+    undefined,
+    buildUserQuery
+);
+```
+
+Example
+
+```typescript
+function buildUserQuery(filter: UserFilter) {
+    const query: any = {};
+
+    if (filter.name) {
+        query.name = {
+            $regex: filter.name,
+            $options: "i"
+        };
+    }
+
+    if (filter.age) {
+        query.age = filter.age;
+    }
+
+    return query;
+}
+```
+
+---
+
+## Pagination
+
+The library supports server-side pagination.
+
+```typescript
+const users = await repository.search({
+    page: 2,
+    size: 50
+});
+```
+
+---
+
+## Sorting
+
+Sort behavior can be customized.
+
+```typescript
+function buildSort(sort?: string) {
+    if (!sort) {
+        return { name: 1 };
+    }
+
+    if (sort === "-createdAt") {
+        return { createdAt: -1 };
+    }
+
+    return { [sort]: 1 };
+}
+```
+
+---
+
+## Metadata Mapping
+
+Application models do not have to match MongoDB documents.
+
+MongoDB
+
+```json
+{
+    "first_name": "John"
+}
+```
+
+Application
+
+```typescript
+{
+    firstName: "John"
+}
+```
+
+Metadata automatically maps between them.
+
+---
+
+## BSON Conversion
+
+The repository supports conversion between application objects and MongoDB BSON.
+
+Example:
+
+```typescript
+new Repository(
+    database,
+    "users",
+    metadata,
+    buildQuery,
+    toBson,
+    fromBson
+);
+```
+
+This is useful for:
+
+- Value Objects
+- UUID
+- DateOnly
+- Decimal
+- Money
+- Custom domain types
+
+---
+
+## Search Repository
+
+For read-only services, use `SearchRepository`.
+
+```typescript
+const repository = new SearchRepository<User>(
+    database,
+    "users"
+);
+```
+
+Supported operations include:
+
+- search
+- load
+- exists
+- count
+
+---
+
+## CRUD Repository
+
+For full CRUD operations:
+
+```typescript
+const repository = new Repository<User>(
+    database,
+    "users"
+);
+```
+
+Supported operations:
 
 - insert
 - update
 - patch
-- save
 - delete
-
-Suitable for standard CRUD applications.
-
----
-
-## Repository
-
-Full repository implementation.
-
-Includes
-
-- CRUD
-- Search
-- Pagination
-- Sorting
-- Filtering
-
-Most applications only need this class.
+- load
+- search
+- exists
+- count
 
 ---
 
-## SearchRepository
+## Batch Operations
 
-Search-only repository.
+The library includes helpers for bulk operations.
 
-Useful for
+Examples include:
 
-- reporting APIs
-- public APIs
-- read models
-- CQRS query side
+- insert many
+- update many
+- delete many
 
-without exposing write operations.
-
----
-
-# Metadata Mapping
-
-The framework maps TypeScript models to MongoDB documents using metadata.
-
-Supports:
-
-- Collection name
-- Id field
-- ObjectId conversion
-- Version field
-- Ignored fields
-- Custom mappings
-
-No decorators are required.
+These operations reduce round trips and improve performance.
 
 ---
 
-# CRUD Operations
+## Audit Logging
 
-```ts
-const repository = new UserRepository(db)
+Audit logging can be integrated through `AuditLogWriter`.
 
-await repository.insert(user)
-
-await repository.update(user)
-
-await repository.patch(id, changes)
-
-await repository.delete(id)
-
-const user = await repository.load(id)
-```
-
----
-
-# Search
-
-SearchRepository supports
-
-- keyword search
-- filtering
-- sorting
-- pagination
-
-Example
-
-```ts
-const result = await repository.search(searchModel)
-```
-
-Typical REST endpoint
-
-```
-GET /users
-
-?page=1
-&size=20
-&sort=-createdAt,name
-&q=john
-```
-
----
-
-# Dynamic Query Builder
-
-The framework converts search models into MongoDB queries automatically.
-
-Supports
-
-- strings
-- numbers
-- booleans
-- dates
-- arrays
-- nested filters
-
-Applications only need to provide the search model.
-
----
-
-# Pagination
-
-Built-in support for
-
-- page
-- size
-- total
-- items
-
-No additional code required.
-
----
-
-# Sorting
-
-Supports multiple fields.
-
-Example
-
-```
-sort=-createdAt,name
-```
-
-which becomes
-
-```
-createdAt DESC
-name ASC
-```
-
----
-
-# Optimistic Locking
-
-Supports version-based updates.
-
-Typical workflow
-
-```
-  Read document
-
-        ↓
-
-     Modify
-
-        ↓
-
-Update with version
-
-        ↓
-
- Version mismatch
-
-        ↓
-
-Conflict detected
-```
-
-Ideal for preventing lost updates.
-
----
-
-# Batch Operations
-
-For high-volume processing.
-
-Includes
-
-- MongoBatchInserter
-- MongoBatchUpdater
-- MongoBatchWriter
-
-Useful for
-
-- ETL
-- Import
-- Synchronization
-- Scheduled jobs
-
----
-
-# Single Operations
-
-Helper classes
-
-- MongoInserter
-- MongoUpdater
-- MongoPatcher
-- MongoUpserter
-
-These classes simplify service implementations and encourage reusable business logic.
-
----
-
-# FieldLoader
-
-Efficiently loads specific fields without retrieving the entire document.
-
-Example
-
-```ts
-const email = await loader.valueOf(id, "email")
-```
-
-Useful for
-
-- validation
-- foreign key lookup
-- existence checks
-
----
-
-# Audit Logging
-
-AuditLogWriter provides a simple mechanism for storing
+Typical audit information includes:
 
 - user
 - action
-- resource
-- IP
-- status
-- remarks
-
-Suitable for enterprise auditing requirements.
+- timestamp
+- entity
+- old value
+- new value
 
 ---
 
-# Health Check
+## Architecture
 
-MongoChecker implements the HealthChecker interface.
-
-Designed for Kubernetes.
-
-Features
-
-- configurable timeout
-- response time
-- status
-- error reporting
-
-Example
-
-```ts
-const checker = new MongoChecker(db)
-
-const result = await checker.check()
+```
+      Application
+            │
+            ▼
+Repository / SearchRepository
+            │
+            ▼
+MongoWriter / MongoLoader
+            │
+            ▼
+      Mongo Helpers
+            │
+            ▼
+      MongoDB Driver
 ```
 
 ---
 
-# Performance
+## Why mongodb-kit?
 
-The framework is designed with minimal runtime overhead.
+Compared with using the MongoDB driver directly, this library provides:
 
-Features include
+- Generic repositories
+- Reusable search logic
+- Pagination
+- Sorting
+- Metadata mapping
+- BSON conversion
+- Reduced boilerplate
+- Cleaner architecture
 
-- no decorators
-- no reflection
-- lightweight mapping
-- direct MongoDB driver usage
-- efficient batch processing
+Compared with ODM frameworks:
 
-Most operations are very close to the performance of the native MongoDB driver.
-
----
-
-# Typical Project Structure
-
-```
-src
- ├── model
- ├── repository
- ├── service
- ├── controller
- └── index.ts
-```
-
-Repository
-
-```
-Controller
-    │
-    ▼
- Service
-    │
-    ▼
-Repository
-    │
-    ▼
- MongoDB
-```
+- No decorators
+- No runtime reflection
+- No Active Record
+- Better separation of concerns
+- Closer to native MongoDB
 
 ---
 
-# Example
+## Suitable For
 
-```ts
-class UserRepository extends Repository<User, string> {
-
-    constructor(db: Db) {
-        super(db, metadata)
-    }
-
-}
-```
-
-Service
-
-```ts
-const user = await repository.load(id)
-
-await repository.update(user)
-```
-
----
-
-# Best Use Cases
-
-- Enterprise REST APIs
-- Internal services
+- Clean Architecture
+- Domain Driven Design (DDD)
+- Hexagonal Architecture
 - Microservices
-- CQRS
-- ETL
-- Import/Export
-- Batch processing
-- Admin applications
-- Back-office systems
+- Enterprise applications
+- REST APIs
+- GraphQL APIs
+- Backend services
 
 ---
 
-# Philosophy
+## Requirements
 
-The framework follows a few simple principles.
-
-- Keep MongoDB simple.
-- Hide repetitive infrastructure.
-- Keep business logic clean.
-- Stay close to the native MongoDB driver.
-- Avoid unnecessary abstraction.
-- Prefer composition over configuration.
-- TypeScript first.
+- Node.js 18+
+- TypeScript 5+
+- MongoDB 5+
 
 ---
 
-# Ecosystem
-
-This library works well together with:
-
-- sql-core
-- mysql2-core
-- query-mappers
-- io-one
-- validation-core
-- reflect-core
-- config-plus
-
-Together they provide a lightweight platform for building modern Node.js applications.
-
----
-
-# Roadmap
-
-Future improvements may include
-
-- Aggregation pipeline helpers
-- Transaction helpers
-- Change Stream utilities
-- Multi-document transactions
-- Soft delete support
-- Repository caching
-- Metrics integration
-
----
-
-# Contributing
-
-Contributions are welcome.
-
-Please submit issues, feature requests, or pull requests.
-
----
-
-# License
+## License
 
 MIT
