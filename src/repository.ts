@@ -41,6 +41,6 @@ export class Repository<T, ID, S> extends CRUDRepository<T, ID> {
     const sn = (filter as any)[st] as string
     const so = this.buildSort(sn, this.attributes)
     const query = this.buildQuery(filter, this.attributes, this.q, this.excluding)
-    return buildSearchResult<T>(this.collection, query, so, limit, offset, fields, this.id, this.map, this.toBson)
+    return buildSearchResult<T>(this.collection, query, so, limit, offset, fields, this.id, this.map, this.fromBson)
   }
 }

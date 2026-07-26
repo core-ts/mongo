@@ -1,6 +1,6 @@
 import { MongoLoader } from "./MongoLoader"
-import { Repository } from "./repository"
 import { CRUDRepository } from "./MongoWriter"
+import { Repository } from "./repository"
 import { SearchRepository } from "./search-repository"
 
 import { MongoLowCodeService } from "./MongoLowCodeService"
@@ -9,22 +9,15 @@ export * from "./repository"
 export { MongoLowCodeService as MongoLowCodeRepository }
 
 export {
-  CRUDRepository as CRUDRepository,
   CRUDRepository as GenericRepository,
-  CRUDRepository as GenericService,
   MongoLoader as LoadRepository,
-  MongoLoader as LoadService,
   CRUDRepository as MongoGenericRepository,
-  CRUDRepository as MongoGenericService,
   MongoLoader as MongoLoadRepository,
-  MongoLoader as MongoLoadService,
   Repository as MongoRepository,
   SearchRepository as MongoSearchRepository,
   MongoLoader as MongoViewRepository,
-  MongoLoader as MongoViewService,
   SearchRepository as SearchRepository,
   MongoLoader as ViewRepository,
-  MongoLoader as ViewService,
 }
 
 export * from "./AuditLogWriter"

@@ -11,7 +11,12 @@
     "sourceMap": false,
     "declaration": false,
     "experimentalDecorators": false,
-    "removeComments": true
+    "removeComments": true,
+    "lib": [
+      "es6",
+      "ES2016",
+      "DOM"
+    ],
   },
   "include": [
     "src/**/*.ts"

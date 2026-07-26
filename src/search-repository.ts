@@ -1,6 +1,6 @@
-import { Collection, Db, Document, Filter, Sort } from "mongodb"
+import { Collection, Db, Document, Filter, ObjectId, Sort } from "mongodb"
 import { Attributes, build } from "./metadata"
-import { StringMap } from "./mongo"
+import { count, findOne, findWithMap, StringMap } from "./mongo"
 import { buildQuery as buildQ } from "./query"
 import { buildSort as bs, buildSearchResult, SearchResult } from "./search"
 
@@ -19,7 +19,7 @@ export class SearchRepository<T, S> {
     collectionName: string,
     metadata: Attributes | string,
     buildQuery?: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<Document>,
-    protected toBson?: (v: T) => T,
+    protected fromBson?: (v: T) => T,
     protected sort?: string,
     q?: string,
     excluding?: string,
@@ -53,7 +53,7 @@ export class SearchRepository<T, S> {
     const sn = (filter as any)[st] as string
     const so = this.buildSort(sn, this.attrs)
     const query = this.buildQuery(filter, this.attrs, this.q, this.excluding)
-    return buildSearchResult<T>(this.collection, query, so, limit, offset, fields, this.id, this.map, this.toBson)
+    return buildSearchResult<T>(this.collection, query, so, limit, offset, fields, this.id, this.map, this.fromBson)
   }
 }
 export function getOffset(limit: number, page: number, ifirstPageSize?: number): number {
@@ -66,3 +66,50 @@ export function getOffset(limit: number, page: number, ifirstPageSize?: number):
   }
 }
 export const SearchBuilder = SearchRepository
+export class Query<T, ID, S> extends SearchRepository<T, S> {
+  protected idObjectId?: boolean
+  constructor(
+    db: Db,
+    collectionName: string,
+    metadata: Attributes | string,
+    buildQuery?: (s: S, m?: Attributes, q?: string, ex?: string) => Filter<Document>,
+    toBson?: (v: T) => T,
+    sort?: string,
+    q?: string,
+    excluding?: string,
+    buildSort?: (s: string, m?: Attributes | StringMap) => Sort,
+    idObjectId?: boolean,
+  ) {
+    super(db, collectionName, metadata, buildQuery, toBson, sort, q, excluding, buildSort)
+    this.idObjectId = idObjectId
+  }
+  metadata(): Attributes | undefined {
+    return this.attrs
+  }
+  all(): Promise<T[]> {
+    const fn = this.fromBson
+    if (fn) {
+      return findWithMap<T>(this.collection, {}, this.id, this.map).then((v) => v.map((o) => fn(o)))
+    } else {
+      return findWithMap<T>(this.collection, {}, this.id, this.map)
+    }
+  }
+  load(id: ID): Promise<T> {
+    const query: any = { _id: this.idObjectId ? new ObjectId("" + id) : "" + id }
+    return findOne<T>(this.collection, query, this.id, this.map).then((v) => {
+      if (v) {
+        if (this.fromBson) {
+          return this.fromBson(v)
+        } else {
+          return v
+        }
+      } else {
+        return v
+      }
+    })
+  }
+  exist(id: ID): Promise<boolean> {
+    const query: any = { _id: this.idObjectId ? new ObjectId("" + id) : "" + id }
+    return count(this.collection, query).then((c) => c > 0)
+  }
+}
