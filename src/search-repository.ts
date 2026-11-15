@@ -43,7 +43,7 @@ export class SearchRepository<T, S> {
     this.excluding = excluding && excluding.length > 0 ? excluding : "excluding"
     this.search = this.search.bind(this)
   }
-  search(filter: S, limit: number, page?: number | string, fields?: string[]): Promise<SearchResult<T>> {
+  search(filter: S, limit: number, page?: number, fields?: string[]): Promise<SearchResult<T>> {
     let offset = 0
 
     if (typeof page === "number" && page >= 1) {
